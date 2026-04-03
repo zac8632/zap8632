@@ -1,1 +1,7 @@
-
+node_modules
+.next
+.turbo
+coverage
+.DS_Store
+.env
+.env.*
