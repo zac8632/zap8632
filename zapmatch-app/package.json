@@ -1,1 +1,2 @@
-
+- build : next build --webpack
+- postbuild : node ./scripts/assert-build-artifacts.mjs
