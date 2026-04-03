@@ -1,2 +1,20 @@
-- build : next build --webpack
-- postbuild : node ./scripts/assert-build-artifacts.mjs
+{
+  "name": "zapmatch-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build --webpack",
+    "postbuild": "node ./scripts/assert-build-artifacts.mjs",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "next": "^16.1.7",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.99.2"
+  }
+}
