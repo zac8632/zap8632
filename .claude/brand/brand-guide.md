@@ -6,7 +6,7 @@ Answer the questions below. Each has an *example* in italics — replace the `A:
 
 **Q1 ⚡ — Brand / agency name and tagline (if any).**
 *Example: "Lim Properties KL — Helping Young Families Buy Their First Home Right."*
-A:
+A: Zac Ong, PropNex. No tagline yet.
 
 **Q2 ⚡ — Your 2–3 brand colors (describe them, no hex needed).**
 *Example: "Warm cream background, deep navy text, mustard yellow accent for CTAs."*
