@@ -73,21 +73,22 @@ def fetch_contact(page, url):
         except Exception:
             pass
 
-    # Heuristic seller name: look for a short line right after
-    # "advertiser" / "seller" / "posted by" style labels, skipping
-    # account-metadata lines like "Joined since: ..." which sit next to
-    # the actual name but aren't it.
+    # Heuristic seller name: "Joined since: ..." has proven to be a
+    # reliable anchor across live tests (unlike "advertiser"/"seller"
+    # labels, which sit near several unrelated UI widgets). In the
+    # profile-card layout, the display name is the line immediately
+    # above it.
     lines = [l.strip() for l in body_text.split("\n") if l.strip()]
     skip_pattern = re.compile(
         r"\b(advertiser|seller|posted by|listed by|joined since|view profile|chat now|show|call|contact|report)\b",
         re.IGNORECASE,
     )
     for i, line in enumerate(lines):
-        if re.search(r"\b(advertiser|seller|posted by|listed by)\b", line, re.IGNORECASE):
-            for candidate in lines[i:i + 5]:
+        if re.search(r"\bjoined since\b", line, re.IGNORECASE):
+            if i > 0:
+                candidate = lines[i - 1]
                 if candidate and not skip_pattern.search(candidate) and not re.match(r"^\d", candidate):
                     result["Seller Name"] = candidate
-                    break
             break
 
     result["Contact Fetch Status"] = "ok" if (result["Phone"] or result["Seller Name"]) else "no contact found"
