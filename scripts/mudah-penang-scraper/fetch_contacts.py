@@ -31,7 +31,11 @@ REVEAL_BUTTON_SELECTOR = (
 def fetch_contact(page, url):
     result = {"Seller Name": "", "Phone": "", "Contact Fetch Status": ""}
     try:
-        page.goto(url, wait_until="networkidle", timeout=45000)
+        # "networkidle" can hang forever on pages with continuous
+        # background traffic (ads, chat widgets) - use domcontentloaded
+        # and just give the page a moment to render instead.
+        page.goto(url, wait_until="domcontentloaded", timeout=45000)
+        page.wait_for_timeout(2000)
     except Exception as e:
         result["Contact Fetch Status"] = f"load failed: {e}"
         return result
