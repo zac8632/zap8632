@@ -228,7 +228,15 @@ def scrape(url, max_pages, headless, delay_ms, debug_dump):
         current_url = url
         for page_num in range(1, max_pages + 1):
             print(f"[page {page_num}] loading {current_url}", file=sys.stderr)
-            page.goto(current_url, wait_until="networkidle", timeout=60000)
+            # "networkidle" is unreliable on sites with continuous
+            # background traffic (ads, chat widgets, analytics beacons) -
+            # it can simply never fire. Wait for the DOM instead, then
+            # explicitly wait for real listing content to show up.
+            page.goto(current_url, wait_until="domcontentloaded", timeout=60000)
+            try:
+                page.wait_for_selector("a:has-text('For Sale')", timeout=20000)
+            except Exception:
+                print(f"[page {page_num}] no 'For Sale' listings appeared within 20s", file=sys.stderr)
             page.wait_for_timeout(delay_ms)
 
             listings = extract_listings_from_page(page, current_url)
