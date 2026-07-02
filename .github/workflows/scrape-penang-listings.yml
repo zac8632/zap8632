@@ -48,10 +48,12 @@ jobs:
       - name: Commit results to data branch
         working-directory: scripts/mudah-penang-scraper
         run: |
+          cp penang_listings.xlsx /tmp/penang_listings.xlsx
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin data/penang-listings || true
           git checkout data/penang-listings 2>/dev/null || git checkout -b data/penang-listings
+          cp /tmp/penang_listings.xlsx penang_listings.xlsx
           git add -f penang_listings.xlsx
           git commit -m "Scrape results ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
           git push origin data/penang-listings
