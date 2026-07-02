@@ -11,6 +11,14 @@ on:
         description: "Max pages to crawl"
         required: false
         default: "20"
+      fetch_contacts:
+        description: "Also visit each listing page and try to extract seller contact info"
+        required: false
+        default: "false"
+      contact_limit:
+        description: "Max number of listings to fetch contacts for (0 = all)"
+        required: false
+        default: "5"
 
 permissions:
   contents: write
@@ -38,6 +46,15 @@ jobs:
             --url "${{ github.event.inputs.url }}" \
             --max-pages "${{ github.event.inputs.max_pages }}" \
             --output penang_listings.xlsx
+
+      - name: Fetch seller contacts
+        if: ${{ github.event.inputs.fetch_contacts == 'true' }}
+        working-directory: scripts/mudah-penang-scraper
+        run: |
+          python fetch_contacts.py \
+            --input penang_listings.xlsx \
+            --output penang_listings.xlsx \
+            --limit "${{ github.event.inputs.contact_limit }}"
 
       - uses: actions/upload-artifact@v4
         with:
