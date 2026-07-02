@@ -78,14 +78,14 @@ def fetch_contact(page, url):
     # account-metadata lines like "Joined since: ..." which sit next to
     # the actual name but aren't it.
     lines = [l.strip() for l in body_text.split("\n") if l.strip()]
+    skip_pattern = re.compile(
+        r"\b(advertiser|seller|posted by|listed by|joined since|view profile|chat now|show|call|contact|report)\b",
+        re.IGNORECASE,
+    )
     for i, line in enumerate(lines):
         if re.search(r"\b(advertiser|seller|posted by|listed by)\b", line, re.IGNORECASE):
             for candidate in lines[i:i + 5]:
-                if (
-                    candidate
-                    and not re.search(r"\b(advertiser|seller|posted by|listed by|joined since)\b", candidate, re.IGNORECASE)
-                    and not re.match(r"^\d", candidate)
-                ):
+                if candidate and not skip_pattern.search(candidate) and not re.match(r"^\d", candidate):
                     result["Seller Name"] = candidate
                     break
             break

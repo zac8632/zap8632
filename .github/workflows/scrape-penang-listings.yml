@@ -11,6 +11,10 @@ on:
         description: "Max pages to crawl"
         required: false
         default: "20"
+      owner_only:
+        description: "Switch to the 'By Owner' filter tab (exclude agent listings)"
+        required: false
+        default: "false"
       fetch_contacts:
         description: "Also visit each listing page and try to extract seller contact info"
         required: false
@@ -42,10 +46,13 @@ jobs:
       - name: Run scraper
         working-directory: scripts/mudah-penang-scraper
         run: |
+          OWNER_FLAG=""
+          if [ "${{ github.event.inputs.owner_only }}" = "true" ]; then OWNER_FLAG="--owner-only"; fi
           python scraper.py \
             --url "${{ github.event.inputs.url }}" \
             --max-pages "${{ github.event.inputs.max_pages }}" \
-            --output penang_listings.xlsx
+            --output penang_listings.xlsx \
+            $OWNER_FLAG
 
       - uses: actions/upload-artifact@v4
         with:

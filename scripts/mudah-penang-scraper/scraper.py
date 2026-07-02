@@ -214,7 +214,22 @@ def extract_listings_from_page(page, base_url):
     return listings
 
 
-def scrape(url, max_pages, headless, delay_ms, debug_dump):
+def switch_to_owner_only(page, current_url):
+    """Click the 'By Owner' filter tab (as opposed to 'All' or 'By
+    Agents') and return the resulting URL, or None if the tab wasn't
+    found/clickable."""
+    try:
+        owner_tab = page.get_by_text(re.compile(r"^By Owner\b", re.IGNORECASE)).first
+        owner_tab.click(timeout=5000)
+        page.wait_for_load_state("domcontentloaded")
+        page.wait_for_selector("a:has-text('For Sale')", timeout=20000)
+        return page.url
+    except Exception as e:
+        print(f"Could not switch to 'By Owner' filter: {e}", file=sys.stderr)
+        return None
+
+
+def scrape(url, max_pages, headless, delay_ms, debug_dump, owner_only=False):
     all_listings = []
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
@@ -238,6 +253,13 @@ def scrape(url, max_pages, headless, delay_ms, debug_dump):
             except Exception:
                 print(f"[page {page_num}] no 'For Sale' listings appeared within 20s", file=sys.stderr)
             page.wait_for_timeout(delay_ms)
+
+            if owner_only and page_num == 1:
+                owner_url = switch_to_owner_only(page, current_url)
+                if owner_url:
+                    current_url = owner_url
+                    print(f"[page {page_num}] switched to By Owner filter: {current_url}", file=sys.stderr)
+                    page.wait_for_timeout(delay_ms)
 
             listings = extract_listings_from_page(page, current_url)
             print(f"[page {page_num}] found {len(listings)} listing candidates", file=sys.stderr)
@@ -278,9 +300,14 @@ def main():
         action="store_true",
         help="Save raw extracted card text per page to debug_page_N.json for troubleshooting.",
     )
+    ap.add_argument(
+        "--owner-only",
+        action="store_true",
+        help="Switch to the 'By Owner' filter tab before scraping (excludes agent listings).",
+    )
     args = ap.parse_args()
 
-    listings = scrape(args.url, args.max_pages, args.headless, args.delay_ms, args.debug_dump)
+    listings = scrape(args.url, args.max_pages, args.headless, args.delay_ms, args.debug_dump, args.owner_only)
 
     if not listings:
         print("No listings extracted. Try --no-headless --debug-dump to inspect what's happening.",
