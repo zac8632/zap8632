@@ -11,6 +11,7 @@ Usage:
 """
 
 import argparse
+import json
 import re
 import sys
 
@@ -109,13 +110,22 @@ def main():
             print(f"[{i+1}/{len(target)}] {url}", file=sys.stderr)
             contact = fetch_contact(page, url)
             row.update(contact)
-            print(f"  -> {contact}", file=sys.stderr)
+            # Printed to stdout (not written to any committed/uploaded
+            # file) so a caller can pull results straight from CI logs
+            # without this contact data ever being persisted to the repo.
+            print("CONTACT_RESULT: " + json.dumps({
+                "Listing URL": url,
+                "Title": row.get("Title", ""),
+                "Seller Name": contact["Seller Name"],
+                "Phone": contact["Phone"],
+                "Contact Fetch Status": contact["Contact Fetch Status"],
+            }))
             page.wait_for_timeout(args.delay_ms)
         browser.close()
 
     out_df = pd.DataFrame(target + rows[len(target):] if args.limit else target)
     out_df.to_excel(args.output, index=False)
-    print(f"Saved {len(out_df)} rows to {args.output}")
+    print(f"Saved {len(out_df)} rows to {args.output} (local/ephemeral runner file only)", file=sys.stderr)
 
 
 if __name__ == "__main__":
