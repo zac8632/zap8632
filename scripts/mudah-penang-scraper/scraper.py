@@ -220,7 +220,10 @@ def switch_to_owner_only(page, current_url):
     found/clickable."""
     try:
         owner_tab = page.get_by_text(re.compile(r"^By Owner\b", re.IGNORECASE)).first
-        owner_tab.click(timeout=5000)
+        # A floating/sticky element (banner, nav link) can sit on top of
+        # the tab and intercept a normal click - force bypasses the
+        # "is anything else covering this element" check.
+        owner_tab.click(timeout=5000, force=True)
         page.wait_for_load_state("domcontentloaded")
         page.wait_for_selector("a:has-text('For Sale')", timeout=20000)
         return page.url
