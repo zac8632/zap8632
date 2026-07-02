@@ -1,26 +1,25 @@
 # Creator OS — plugin
 
-18 bundled skills for a Penang property personal brand: signal mining, story mining,
-scripting, packaging, and performance tracking. Packaged as a proper plugin (one
-`.claude-plugin/plugin.json` manifest + `skills/` directory) so it installs as one
-unit instead of 18 separate uploads.
+19 bundled skills for a content creator's personal brand: onboarding, signal
+mining, story mining, scripting, packaging, and performance tracking. Packaged
+as a proper plugin (one `.claude-plugin/plugin.json` manifest + `skills/`
+directory) so it installs as one unit instead of separate uploads.
 
 ## Install (share this with other users)
 
 This repo doubles as a plugin marketplace via `.claude-plugin/marketplace.json` at
-the repo root. Anyone with access to `zac8632/zap8632` can install from inside
-Claude Code:
+the repo root. Anyone with access to this repo can install from inside Claude Code:
 
 ```
-/plugin marketplace add zac8632/zap8632
+/plugin marketplace add <owner>/<repo>
 /plugin install creator-os
 ```
 
-That's it — all 18 skills load as `creator-os:<skill-name>`, e.g.
+That's it — all skills load as `creator-os:<skill-name>`, e.g.
 `/creator-os:signal-mine`. To pick up updates later:
 
 ```
-/plugin marketplace update zap8632-marketplace
+/plugin marketplace update creator-os-marketplace
 /plugin update creator-os
 ```
 
@@ -29,13 +28,34 @@ That's it — all 18 skills load as `creator-os:<skill-name>`, e.g.
 2. `claude --plugin-dir /path/to/creator-os-plugin`
 3. Run `/reload-plugins` inside that session if the skills don't show up right away
 
+## First run: onboarding (required, one-time)
+
+Right after installing, run:
+
+```
+/creator-os:onboarding
+```
+
+This is a short interview that fills in `docs/voice-doc.md` and
+`docs/pillars.md` — the creator's tone, banned phrases, sign-off, pillars, and
+audience. Every other skill in this plugin reads those two files and refuses
+to produce output until they're filled in (they check for a template marker
+and hand off to onboarding automatically if it's still there), so there's no
+way for a new user to skip this by accident. It only runs once — to change
+your voice or pillars later, just run `/creator-os:onboarding` again and it
+edits in place instead of re-running the full interview.
+
 ## What's inside
 
 ```
 creator-os-plugin/
 ├── .claude-plugin/
 │   └── plugin.json          ← the manifest that makes this one installable unit
+├── docs/
+│   ├── voice-doc.md          ← template, filled in by /creator-os:onboarding
+│   └── pillars.md            ← template, filled in by /creator-os:onboarding
 ├── skills/
+│   ├── onboarding/SKILL.md
 │   ├── signal-mine/SKILL.md
 │   ├── story-mine/SKILL.md
 │   ├── follow-up-engine/SKILL.md
@@ -57,6 +77,6 @@ creator-os-plugin/
 └── README.md                 ← this file
 ```
 
-Voice doc, pillars doc, and the Google Sheets setup for performance-pulse/goal-lock
-are unchanged from before — see the earlier `creator-os-claude-ai.zip` download for
-`docs/voice-doc.md` and `docs/pillars.md` if you don't still have them.
+The Google Sheets setup for performance-pulse/goal-lock (two sheets: "Creator
+OS — Performance Log" and "Creator OS — Goal State", with Google Drive
+connected) is separate from onboarding — see STEP-BY-STEP.md.

@@ -5,6 +5,13 @@ description: Take a personal experience, client story, or moment the creator des
 
 # Story Mine
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 Turns a story into content. The creator describes something that happened (to them, a client, their audience) and the skill pulls out the distinct content angles hiding inside it. The skill that makes your own life the most original content source you have.
 
 ## When to run this

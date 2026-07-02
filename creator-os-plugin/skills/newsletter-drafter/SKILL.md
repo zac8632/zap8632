@@ -5,6 +5,13 @@ description: Write a full newsletter draft in the creator's voice and structure,
 
 # Newsletter Drafter
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 Writes complete newsletter drafts in the creator's voice and structure. From a topic, or repurposed from existing content.
 
 ## When to run this

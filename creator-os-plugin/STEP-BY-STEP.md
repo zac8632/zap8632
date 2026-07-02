@@ -20,9 +20,13 @@ Both work. If you're ever unsure which skill will fire, just use the explicit
 
 ## One-time setup, if not done yet
 
-1. `docs/voice-doc.md` and `docs/pillars.md` (from the earlier download) — paste
-   these into a Project's knowledge if you're on Cowork, or keep them in your repo
-   root / CLAUDE.md reference if you're on Claude Code, so every skill can read them.
+1. **Run onboarding first** — `/creator-os:onboarding`. This fills in
+   `docs/voice-doc.md` and `docs/pillars.md` from a short interview. Every other
+   skill checks for these before doing anything and will redirect you here if
+   they're still template placeholders — so there's no way to skip this by
+   accident. Takes a few minutes, one-time only. Want to change your voice or
+   pillars later? Run `/creator-os:onboarding` again — it edits in place instead
+   of re-running the full interview.
 2. Two Google Sheets: **"Creator OS — Performance Log"** and **"Creator OS — Goal
    State"** — `performance-pulse` and `goal-lock` read/write these.
 3. Confirm Google Drive is connected (needed for both Sheets above).
@@ -113,8 +117,12 @@ Reads real numbers from the Performance Log sheet once there's data in it.
 ## If something doesn't fire right
 
 Use the explicit `/creator-os:<skill-name>` form instead of natural language — it's
-unambiguous. Full list of names: `signal-mine`, `story-mine`, `the-bridge`,
-`reel-scripter`, `long-form-outline`, `long-to-short`, `series-planner`,
-`youtube-ideation`, `youtube-packaging`, `caption-and-cta`, `newsletter-drafter`,
-`freebie-suggester`, `audience-gaps`, `follow-up-engine`, `goal-lock`,
-`performance-pulse`, `skill-opportunity-finder`, `skill-builder`.
+unambiguous. Full list of names: `onboarding`, `signal-mine`, `story-mine`,
+`the-bridge`, `reel-scripter`, `long-form-outline`, `long-to-short`,
+`series-planner`, `youtube-ideation`, `youtube-packaging`, `caption-and-cta`,
+`newsletter-drafter`, `freebie-suggester`, `audience-gaps`, `follow-up-engine`,
+`goal-lock`, `performance-pulse`, `skill-opportunity-finder`, `skill-builder`.
+
+If a skill tells you to run `/creator-os:onboarding` before it'll produce
+output, that's expected the first time — it means `docs/voice-doc.md` or
+`docs/pillars.md` haven't been filled in yet.

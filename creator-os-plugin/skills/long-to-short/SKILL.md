@@ -5,6 +5,13 @@ description: Turn a YouTube long-form video into short-form scripts (Reels, Shor
 
 # Long-to-Short
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 One long-form video becomes a week of short-form. Finds the most clippable moments and writes them as standalone shorts.
 
 ## When to run this

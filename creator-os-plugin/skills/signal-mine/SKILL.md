@@ -5,6 +5,13 @@ description: Turn Malaysian property news and market chatter -- EdgeProp Malaysi
 
 # Signal Mine — Malaysia Property Edition
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 Finds the signal in Malaysian property news and turns it into content that builds the creator's personal brand as the go-to authority for foreign/expat/luxury buyers on northern Penang Island — not a news aggregator account.
 
 ## Scope

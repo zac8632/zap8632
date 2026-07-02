@@ -5,6 +5,13 @@ description: When a piece of content performs well, generate the follow-up conte
 
 # Follow-Up Engine
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 A post worked. Now what. This skill generates the follow-up content that rides a validated win instead of starting from zero.
 
 ## When to run this

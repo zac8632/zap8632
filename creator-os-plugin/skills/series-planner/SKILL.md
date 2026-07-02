@@ -5,6 +5,13 @@ description: Turn one big topic into a multi-part content series mapped across p
 
 # Series Planner
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 One big idea becomes a connected series. Maps the parts across platforms so a single theme compounds instead of being spent in one post.
 
 ## When to run this

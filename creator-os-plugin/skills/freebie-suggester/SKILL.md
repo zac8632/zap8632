@@ -5,6 +5,13 @@ description: Turn a content topic or video idea into specific lead-magnet ideas 
 
 # Freebie Suggester
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 Turns "I'm posting about X" into specific, buildable lead magnets that connect the content to the creator's offer. Not freebie types — actual freebie ideas.
 
 ## When to run this

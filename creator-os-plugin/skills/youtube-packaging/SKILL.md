@@ -5,6 +5,13 @@ description: Generate YouTube title and thumbnail-word pairs that follow the pai
 
 # YouTube Packaging
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 Titles and thumbnail words as paired packages. The pairing principle: title sets context, thumbnail creates curiosity — they never say the same thing.
 
 ## The pairing principle

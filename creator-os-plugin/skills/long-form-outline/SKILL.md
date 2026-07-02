@@ -5,6 +5,13 @@ description: Turn a YouTube topic into a full long-form video outline — cold o
 
 # Long-form Outline
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 The structural skeleton for a YouTube long-form video. Built for retention — every section has a payoff, nothing sags.
 
 ## When to run this

@@ -5,6 +5,13 @@ description: Write a short-form script (Reel, Short, TikTok) with a climax-led o
 
 # Reel Scripter
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 Writes the full short-form script — the format you batch most. Climax-led opener, tight beats, visual cues, CTA. In your voice.
 
 ## When to run this

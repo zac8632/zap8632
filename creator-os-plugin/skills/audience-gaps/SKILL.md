@@ -5,6 +5,13 @@ description: Surface the questions a creator's audience is silently asking while
 
 # Audience Gaps
 
+## Before you start
+
+Check `docs/voice-doc.md` and `docs/pillars.md`. If either file is missing or
+still contains the `<!-- TEMPLATE: PENDING SETUP -->` marker, stop here — do
+not generate output. Tell the creator this is a one-time setup step and hand
+off to `/creator-os:onboarding`. Once onboarding is done, re-run this skill.
+
 Surfaces the 3 questions your audience is silently asking while they watch/read your content — and turns each into an action.
 
 ## When to run this
