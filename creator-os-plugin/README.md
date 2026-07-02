@@ -5,31 +5,29 @@ scripting, packaging, and performance tracking. Packaged as a proper plugin (one
 `.claude-plugin/plugin.json` manifest + `skills/` directory) so it installs as one
 unit instead of 18 separate uploads.
 
-## Honest note on Cowork Desktop specifically
+## Install (share this with other users)
 
-I can't confirm from here exactly what Cowork Desktop's local-plugin install UI looks
-like today — I don't have live access to test it myself, and it's the kind of detail
-that changes. Two paths, try in this order:
+This repo doubles as a plugin marketplace via `.claude-plugin/marketplace.json` at
+the repo root. Anyone with access to `zac8632/zap8632` can install from inside
+Claude Code:
 
-**Path A — Cowork Desktop, if it supports local plugin folders:**
-1. Unzip this download somewhere on your machine
-2. Open Cowork Desktop → Customize → Personal plugins → the "+" button
-3. Look for an option like "Install from folder" / "Add local plugin" and point it
-   at the unzipped `creator-os-plugin` folder
-4. If you only see "Browse plugins" (a directory of published plugins, not a local
-   upload option), Path A isn't available in your version — fall back to Path B
+```
+/plugin marketplace add zac8632/zap8632
+/plugin install creator-os
+```
 
-**Path B — Claude Code (confirmed to work this way):**
-1. Unzip this download
-2. From a terminal: `claude --plugin-dir /path/to/creator-os-plugin`
-3. Inside that session, run `/reload-plugins` if needed
-4. All 18 skills are now available as `creator-os:<skill-name>` — e.g.
-   `/creator-os:signal-mine`
+That's it — all 18 skills load as `creator-os:<skill-name>`, e.g.
+`/creator-os:signal-mine`. To pick up updates later:
 
-**Path C — if neither local-plugin route works on your setup:**
-Fall back to the claude.ai web method from before — 18 individual skill ZIPs
-uploaded one at a time via Customize → Skills. Slower, but guaranteed to work since
-it doesn't depend on a plugin-loading feature I can't verify live from here.
+```
+/plugin marketplace update zap8632-marketplace
+/plugin update creator-os
+```
+
+**Local dev / no marketplace access:**
+1. Clone or unzip this folder somewhere
+2. `claude --plugin-dir /path/to/creator-os-plugin`
+3. Run `/reload-plugins` inside that session if the skills don't show up right away
 
 ## What's inside
 

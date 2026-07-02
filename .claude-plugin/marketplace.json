@@ -1,0 +1,14 @@
+{
+  "name": "zap8632-marketplace",
+  "owner": {
+    "name": "Zac Ong"
+  },
+  "plugins": [
+    {
+      "name": "creator-os",
+      "source": "./creator-os-plugin",
+      "description": "Closed-loop content system for a Penang property personal brand: signal mining, story mining, scripting, packaging, and performance tracking — 18 bundled skills.",
+      "version": "1.0.0"
+    }
+  ]
+}
