@@ -82,24 +82,19 @@ def main():
             print(f"  <{m['tag']} class={m['cls']!r}> {m['text']!r}")
 
         print("=" * 80)
-        print("Clicking any button/link with reveal-ish text, then re-dumping phone-like content...")
-        reveal_selector = (
-            "button:text-is('Call'), a:text-is('Call'), p:text-is('Call'), "
-            "button:text-is('Show Number'), a:text-is('Show Number'), "
-            "button:text-is('View Number'), a:text-is('View Number'), "
-            "button:text-is('Show Phone Number'), a:text-is('Show Phone Number')"
-        )
+        print("Clicking button[data-label='call'], then re-dumping phone-like content...")
+        reveal_selector = "button[data-label='call']"
         try:
             reveal_buttons = page.locator(reveal_selector)
             n = min(reveal_buttons.count(), 5)
-            print(f"Found {n} reveal-ish controls (exact-text match)")
+            print(f"Found {n} call button(s)")
             for i in range(n):
                 btn = reveal_buttons.nth(i)
                 text = (btn.inner_text() or "").strip()
                 print(f"  clicking [{i}] {text!r}")
                 try:
-                    btn.click(timeout=3000, force=True)
-                    page.wait_for_timeout(1500)
+                    btn.click(timeout=5000, force=True)
+                    page.wait_for_timeout(2500)
                 except Exception as e:
                     print(f"    click failed: {e}")
         except Exception as e:

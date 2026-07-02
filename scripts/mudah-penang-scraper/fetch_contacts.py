@@ -23,18 +23,15 @@ from playwright.sync_api import sync_playwright
 PHONE_RE = re.compile(r"(?:\+?60|0)1[0-46-9][-\s]?\d{3,4}[-\s]?\d{4}")
 MASKED_PHONE_RE = re.compile(r"(?:\+?60|0)1[0-46-9][-\s]?\d{3,7}\*{2,4}")
 
-# A live debug dump of an actual listing page showed the reveal-ish
-# substring selector (a:has-text('Phone')) was matching category
-# breadcrumb links like "Mobile Phones & Gadgets" before ever reaching
-# the real button - a short exact-text "Call" element
-# (<p>Call</p> inside a clickable "Contact Owner" card). :text-is()
-# requires an exact (not substring) match.
-REVEAL_BUTTON_SELECTOR = (
-    "button:text-is('Call'), a:text-is('Call'), p:text-is('Call'), "
-    "button:text-is('Show Number'), a:text-is('Show Number'), "
-    "button:text-is('View Number'), a:text-is('View Number'), "
-    "button:text-is('Show Phone Number'), a:text-is('Show Phone Number')"
-)
+# A live debug dump of a real listing page found the actual button:
+#   <button data-label="call" data-sticky="true" ...><p>Call</p></button>
+# Clicking the inner <p> directly failed ("element is not visible" -
+# likely a sticky-positioning/animation quirk); the button itself is the
+# reliable target. Unlike the Chat button (which has
+# data-href=".../?signin=1&goto_url=..." - confirmed login-gated), Call
+# has no such redirect, so it's very likely an in-page AJAX reveal that
+# doesn't require an account.
+REVEAL_BUTTON_SELECTOR = "button[data-label='call']"
 
 
 def fetch_contact(page, url):
@@ -49,16 +46,12 @@ def fetch_contact(page, url):
         result["Contact Fetch Status"] = f"load failed: {e}"
         return result
 
-    # Try clicking anything that looks like a "reveal number" control.
+    # Click the Call button (likely an in-page AJAX reveal, no login
+    # needed - see selector comment above).
     try:
-        buttons = page.locator(REVEAL_BUTTON_SELECTOR)
-        count = min(buttons.count(), 5)
-        for i in range(count):
-            try:
-                buttons.nth(i).click(timeout=3000, force=True)
-                page.wait_for_timeout(1500)
-            except Exception:
-                continue
+        call_btn = page.locator(REVEAL_BUTTON_SELECTOR).first
+        call_btn.click(timeout=5000, force=True)
+        page.wait_for_timeout(2500)
     except Exception:
         pass
 
