@@ -136,44 +136,27 @@ def find_next_page_url(page, current_url):
 
 
 def extract_listings_from_page(page, base_url):
-    """Generic, class-name-agnostic extraction: find every element whose
-    text contains a price (RM...), walk up to the nearest ancestor that
-    also contains a listing link, and pull fields out of that ancestor's
-    text via regex. This avoids depending on mudah.my's hashed CSS
-    classes, which change frequently."""
+    """Each mudah.my listing card is a single clickable <a href> whose
+    innerText contains the whole card ("<Type> For Sale | listed X ago |
+    RM ... | <Project>, <Area> | ... | Bed | ... | Bath | ... | by |
+    <seller>"). So instead of guessing DOM card boundaries, just grab
+    every anchor that looks like a listing (mentions "For Sale" and has a
+    price) and parse its text as pipe-separated tokens."""
 
-    cards = page.evaluate(
+    anchors = page.evaluate(
         """
         () => {
-            const priceRe = /RM\\s?[\\d,]+/i;
             const results = [];
             const seen = new Set();
-            const all = Array.from(document.querySelectorAll('body *'));
-            for (const el of all) {
-                const text = el.innerText || '';
+            const priceRe = /RM\\s?[\\d,]+/i;
+            for (const a of document.querySelectorAll('a[href]')) {
+                const text = a.innerText || '';
+                if (!/for sale/i.test(text)) continue;
                 if (!priceRe.test(text)) continue;
-                // find nearest ancestor containing an <a href> (the card root)
-                let node = el;
-                let cardRoot = null;
-                for (let depth = 0; depth < 8 && node; depth++) {
-                    if (node.querySelector && node.querySelector('a[href]')) {
-                        cardRoot = node;
-                    }
-                    node = node.parentElement;
-                }
-                if (!cardRoot) continue;
-                const link = cardRoot.querySelector('a[href]');
-                if (!link) continue;
-                const href = link.getAttribute('href');
+                const href = a.getAttribute('href');
                 if (!href || seen.has(href)) continue;
-                // skip obvious non-listing links (nav, filters, category)
-                if (/\\/(malaysia)\\/?$/.test(href)) continue;
                 seen.add(href);
-                results.push({
-                    href: href,
-                    text: cardRoot.innerText || '',
-                    linkText: link.innerText || link.getAttribute('title') || '',
-                });
+                results.push({ href: href, text: text });
             }
             return results;
         }
@@ -182,38 +165,47 @@ def extract_listings_from_page(page, base_url):
 
     scrape_time = datetime.now()
     listings = []
-    for c in cards:
-        text = c["text"]
+    for a in anchors:
+        text = a["text"]
+        tokens = [t.strip() for t in text.split("|")]
+        tokens = [t for t in tokens if t]
+
         price_m = PRICE_RE.search(text)
         bed_m = BEDROOM_RE.search(text)
         bath_m = BATHROOM_RE.search(text)
         size_m = SIZE_RE.search(text)
 
-        location = ""
-        for area in PENANG_ISLAND_AREAS:
-            if area.lower() in text.lower():
-                location = area
-                break
+        property_type = re.sub(r"\s*for sale\s*$", "", tokens[0], flags=re.IGNORECASE).strip() if tokens else ""
+
+        location_token = ""
+        for t in tokens:
+            if "," in t:
+                area_part = t.split(",")[-1].strip()
+                if any(area.lower() == area_part.lower() for area in PENANG_ISLAND_AREAS):
+                    location_token = t
+                    break
+        if not location_token:
+            for area in PENANG_ISLAND_AREAS:
+                if area.lower() in text.lower():
+                    location_token = area
+                    break
+
+        by_idx = next((i for i, t in enumerate(tokens) if t.lower() == "by"), None)
+        seller = tokens[by_idx + 1] if by_idx is not None and by_idx + 1 < len(tokens) else ""
+        title = tokens[by_idx - 1] if by_idx is not None and by_idx > 0 else ""
 
         listed_dt = parse_listed_date(text, scrape_time)
 
-        title = c["linkText"].strip().split("\n")[0].strip()
-        if not title:
-            # fall back to first non-price line of the card text
-            for line in text.split("\n"):
-                line = line.strip()
-                if line and not PRICE_RE.match(line):
-                    title = line
-                    break
-
         listings.append({
             "Title": title,
+            "Property Type": property_type,
             "Price": price_m.group(0) if price_m else "",
-            "Location": location,
+            "Location": location_token,
             "Bedrooms": bed_m.group(1) if bed_m else "",
             "Bathrooms": bath_m.group(1) if bath_m else "",
             "Size (sqft)": size_m.group(1).replace(",", "") if size_m else "",
-            "Listing URL": urljoin(base_url, c["href"]),
+            "Seller": seller,
+            "Listing URL": urljoin(base_url, a["href"]),
             "Listed Date": listed_dt.strftime("%Y-%m-%d") if listed_dt else "",
             "Days Listed": (scrape_time - listed_dt).days if listed_dt else "",
             "Raw Card Text": text.replace("\n", " | "),
