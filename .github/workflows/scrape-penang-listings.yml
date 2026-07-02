@@ -23,6 +23,10 @@ on:
         description: "Max number of listings to fetch contacts for (0 = all)"
         required: false
         default: "5"
+      debug_url:
+        description: "If set, runs debug_detail_page.py against this URL and skips everything else"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -43,7 +47,14 @@ jobs:
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
+      - name: Debug detail page (log output only)
+        if: ${{ github.event.inputs.debug_url != '' }}
+        working-directory: scripts/mudah-penang-scraper
+        run: |
+          python debug_detail_page.py "${{ github.event.inputs.debug_url }}"
+
       - name: Run scraper
+        if: ${{ github.event.inputs.debug_url == '' }}
         working-directory: scripts/mudah-penang-scraper
         run: |
           OWNER_FLAG=""
@@ -55,12 +66,14 @@ jobs:
             $OWNER_FLAG
 
       - uses: actions/upload-artifact@v4
+        if: ${{ github.event.inputs.debug_url == '' }}
         with:
           name: penang-listings
           path: scripts/mudah-penang-scraper/penang_listings.xlsx
           retention-days: 14
 
       - name: Commit results to data branch
+        if: ${{ github.event.inputs.debug_url == '' }}
         working-directory: scripts/mudah-penang-scraper
         run: |
           cp penang_listings.xlsx /tmp/penang_listings.xlsx
@@ -83,7 +96,7 @@ jobs:
       # or uploaded artifact - only printed to this step's own log
       # output, which the caller reads directly and discards.
       - name: Fetch seller contacts (log output only, not persisted)
-        if: ${{ github.event.inputs.fetch_contacts == 'true' }}
+        if: ${{ github.event.inputs.fetch_contacts == 'true' && github.event.inputs.debug_url == '' }}
         working-directory: scripts/mudah-penang-scraper
         run: |
           python fetch_contacts.py \
