@@ -47,15 +47,6 @@ jobs:
             --max-pages "${{ github.event.inputs.max_pages }}" \
             --output penang_listings.xlsx
 
-      - name: Fetch seller contacts
-        if: ${{ github.event.inputs.fetch_contacts == 'true' }}
-        working-directory: scripts/mudah-penang-scraper
-        run: |
-          python fetch_contacts.py \
-            --input penang_listings.xlsx \
-            --output penang_listings.xlsx \
-            --limit "${{ github.event.inputs.contact_limit }}"
-
       - uses: actions/upload-artifact@v4
         with:
           name: penang-listings
@@ -74,3 +65,16 @@ jobs:
           git add -f penang_listings.xlsx
           git commit -m "Scrape results ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
           git push origin data/penang-listings
+
+      # Seller contact info (name/phone) is personal data about third
+      # parties, so it is deliberately NEVER written to a committed file
+      # or uploaded artifact - only printed to this step's own log
+      # output, which the caller reads directly and discards.
+      - name: Fetch seller contacts (log output only, not persisted)
+        if: ${{ github.event.inputs.fetch_contacts == 'true' }}
+        working-directory: scripts/mudah-penang-scraper
+        run: |
+          python fetch_contacts.py \
+            --input penang_listings.xlsx \
+            --output /tmp/contacts_local_only.xlsx \
+            --limit "${{ github.event.inputs.contact_limit }}"
