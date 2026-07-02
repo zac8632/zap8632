@@ -13,7 +13,7 @@ on:
         default: "20"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   scrape:
@@ -44,3 +44,14 @@ jobs:
           name: penang-listings
           path: scripts/mudah-penang-scraper/penang_listings.xlsx
           retention-days: 14
+
+      - name: Commit results to data branch
+        working-directory: scripts/mudah-penang-scraper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin data/penang-listings || true
+          git checkout data/penang-listings 2>/dev/null || git checkout -b data/penang-listings
+          git add -f penang_listings.xlsx
+          git commit -m "Scrape results ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          git push origin data/penang-listings
