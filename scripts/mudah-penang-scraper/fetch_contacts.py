@@ -59,13 +59,33 @@ def fetch_contact(page, url):
     if phone_m:
         result["Phone"] = phone_m.group(0)
 
+    # Many listings reveal contact via a WhatsApp deep link instead of
+    # printing the number as text - the number lives in the href.
+    if not result["Phone"]:
+        try:
+            wa_links = page.locator("a[href*='wa.me'], a[href*='whatsapp']")
+            for i in range(min(wa_links.count(), 3)):
+                href = wa_links.nth(i).get_attribute("href") or ""
+                m = re.search(r"(?:wa\.me/|phone=)(\d{8,15})", href)
+                if m:
+                    result["Phone"] = m.group(1)
+                    break
+        except Exception:
+            pass
+
     # Heuristic seller name: look for a short line right after
-    # "advertiser" / "seller" / "posted by" style labels.
+    # "advertiser" / "seller" / "posted by" style labels, skipping
+    # account-metadata lines like "Joined since: ..." which sit next to
+    # the actual name but aren't it.
     lines = [l.strip() for l in body_text.split("\n") if l.strip()]
     for i, line in enumerate(lines):
         if re.search(r"\b(advertiser|seller|posted by|listed by)\b", line, re.IGNORECASE):
-            for candidate in lines[i:i + 3]:
-                if candidate and not re.search(r"\b(advertiser|seller|posted by|listed by)\b", candidate, re.IGNORECASE):
+            for candidate in lines[i:i + 5]:
+                if (
+                    candidate
+                    and not re.search(r"\b(advertiser|seller|posted by|listed by|joined since)\b", candidate, re.IGNORECASE)
+                    and not re.match(r"^\d", candidate)
+                ):
                     result["Seller Name"] = candidate
                     break
             break
