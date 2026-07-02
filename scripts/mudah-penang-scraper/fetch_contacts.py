@@ -18,14 +18,22 @@ import sys
 import pandas as pd
 from playwright.sync_api import sync_playwright
 
+# Full number: 016-4411234 style. Masked-but-present number as shown
+# before reveal: 016441****  (letters/digits then asterisks).
 PHONE_RE = re.compile(r"(?:\+?60|0)1[0-46-9][-\s]?\d{3,4}[-\s]?\d{4}")
+MASKED_PHONE_RE = re.compile(r"(?:\+?60|0)1[0-46-9][-\s]?\d{3,7}\*{2,4}")
 
+# A live debug dump of an actual listing page showed the reveal-ish
+# substring selector (a:has-text('Phone')) was matching category
+# breadcrumb links like "Mobile Phones & Gadgets" before ever reaching
+# the real button - a short exact-text "Call" element
+# (<p>Call</p> inside a clickable "Contact Owner" card). :text-is()
+# requires an exact (not substring) match.
 REVEAL_BUTTON_SELECTOR = (
-    "button:has-text('Show'), a:has-text('Show'), "
-    "button:has-text('Call'), a:has-text('Call'), "
-    "button:has-text('Phone'), a:has-text('Phone'), "
-    "button:has-text('Contact'), a:has-text('Contact'), "
-    "button:has-text('Number'), a:has-text('Number')"
+    "button:text-is('Call'), a:text-is('Call'), p:text-is('Call'), "
+    "button:text-is('Show Number'), a:text-is('Show Number'), "
+    "button:text-is('View Number'), a:text-is('View Number'), "
+    "button:text-is('Show Phone Number'), a:text-is('Show Phone Number')"
 )
 
 
@@ -47,8 +55,8 @@ def fetch_contact(page, url):
         count = min(buttons.count(), 5)
         for i in range(count):
             try:
-                buttons.nth(i).click(timeout=3000)
-                page.wait_for_timeout(1000)
+                buttons.nth(i).click(timeout=3000, force=True)
+                page.wait_for_timeout(1500)
             except Exception:
                 continue
     except Exception:
@@ -58,6 +66,13 @@ def fetch_contact(page, url):
     phone_m = PHONE_RE.search(body_text)
     if phone_m:
         result["Phone"] = phone_m.group(0)
+    else:
+        # Reveal click may not have fully unmasked it (e.g. requires
+        # login) - surface the masked form rather than nothing, so it's
+        # at least clear a number exists and roughly which prefix it is.
+        masked_m = MASKED_PHONE_RE.search(body_text)
+        if masked_m:
+            result["Phone"] = masked_m.group(0) + " (masked - reveal click may require login)"
 
     # Many listings reveal contact via a WhatsApp deep link instead of
     # printing the number as text - the number lives in the href.
