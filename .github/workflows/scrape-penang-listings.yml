@@ -1,0 +1,46 @@
+name: Scrape Penang Listings
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Mudah.my search URL"
+        required: false
+        default: "https://www.mudah.my/malaysia/properties-for-sale?adsby=false&subarea=117%2C116%2C102%2C99%2C88"
+      max_pages:
+        description: "Max pages to crawl"
+        required: false
+        default: "20"
+
+permissions:
+  contents: read
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: scripts/mudah-penang-scraper
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Run scraper
+        working-directory: scripts/mudah-penang-scraper
+        run: |
+          python scraper.py \
+            --url "${{ github.event.inputs.url }}" \
+            --max-pages "${{ github.event.inputs.max_pages }}" \
+            --output penang_listings.xlsx
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: penang-listings
+          path: scripts/mudah-penang-scraper/penang_listings.xlsx
+          retention-days: 14
