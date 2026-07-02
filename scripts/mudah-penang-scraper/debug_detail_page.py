@@ -84,16 +84,15 @@ def main():
         print("=" * 80)
         print("Clicking any button/link with reveal-ish text, then re-dumping phone-like content...")
         reveal_selector = (
-            "button:has-text('Show'), a:has-text('Show'), "
-            "button:has-text('Call'), a:has-text('Call'), "
-            "button:has-text('Phone'), a:has-text('Phone'), "
-            "button:has-text('Contact'), a:has-text('Contact'), "
-            "button:has-text('Chat'), a:has-text('Chat')"
+            "button:text-is('Call'), a:text-is('Call'), p:text-is('Call'), "
+            "button:text-is('Show Number'), a:text-is('Show Number'), "
+            "button:text-is('View Number'), a:text-is('View Number'), "
+            "button:text-is('Show Phone Number'), a:text-is('Show Phone Number')"
         )
         try:
             reveal_buttons = page.locator(reveal_selector)
             n = min(reveal_buttons.count(), 5)
-            print(f"Found {n} reveal-ish controls")
+            print(f"Found {n} reveal-ish controls (exact-text match)")
             for i in range(n):
                 btn = reveal_buttons.nth(i)
                 text = (btn.inner_text() or "").strip()
