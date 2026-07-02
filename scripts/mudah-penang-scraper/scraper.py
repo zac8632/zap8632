@@ -137,11 +137,12 @@ def find_next_page_url(page, current_url):
 
 def extract_listings_from_page(page, base_url):
     """Each mudah.my listing card is a single clickable <a href> whose
-    innerText contains the whole card ("<Type> For Sale | listed X ago |
-    RM ... | <Project>, <Area> | ... | Bed | ... | Bath | ... | by |
-    <seller>"). So instead of guessing DOM card boundaries, just grab
-    every anchor that looks like a listing (mentions "For Sale" and has a
-    price) and parse its text as pipe-separated tokens."""
+    innerText contains the whole card, one field per line: "<Type> For
+    Sale", "listed X ago", "RM ...", "<Project>, <Area>", size, "sq.ft",
+    bed count, "Bed", bath count, "Bath", tenure, then the listing title.
+    So instead of guessing DOM card boundaries, just grab every anchor
+    that looks like a listing (mentions "For Sale" and has a price) and
+    parse its text as newline-separated tokens."""
 
     anchors = page.evaluate(
         """
@@ -167,7 +168,10 @@ def extract_listings_from_page(page, base_url):
     listings = []
     for a in anchors:
         text = a["text"]
-        tokens = [t.strip() for t in text.split("|")]
+        # innerText separates visual lines with "\n", not "|" (an earlier
+        # debug render used " | " for display only, which is misleading if
+        # you look at it in isolation).
+        tokens = [t.strip() for t in text.split("\n")]
         tokens = [t for t in tokens if t]
 
         price_m = PRICE_RE.search(text)
@@ -177,22 +181,18 @@ def extract_listings_from_page(page, base_url):
 
         property_type = re.sub(r"\s*for sale\s*$", "", tokens[0], flags=re.IGNORECASE).strip() if tokens else ""
 
-        location_token = ""
-        for t in tokens:
-            if "," in t:
-                area_part = t.split(",")[-1].strip()
-                if any(area.lower() == area_part.lower() for area in PENANG_ISLAND_AREAS):
-                    location_token = t
-                    break
+        # Location is consistently the "<Project>, <Area>" line right
+        # after the price line.
+        location_token = tokens[3] if len(tokens) > 3 and "," in tokens[3] else ""
         if not location_token:
             for area in PENANG_ISLAND_AREAS:
                 if area.lower() in text.lower():
                     location_token = area
                     break
 
-        by_idx = next((i for i, t in enumerate(tokens) if t.lower() == "by"), None)
-        seller = tokens[by_idx + 1] if by_idx is not None and by_idx + 1 < len(tokens) else ""
-        title = tokens[by_idx - 1] if by_idx is not None and by_idx > 0 else ""
+        # A single card's anchor text has no seller info (that lives
+        # outside the anchor) - the last line is the listing's title.
+        title = tokens[-1] if tokens else ""
 
         listed_dt = parse_listed_date(text, scrape_time)
 
@@ -204,7 +204,6 @@ def extract_listings_from_page(page, base_url):
             "Bedrooms": bed_m.group(1) if bed_m else "",
             "Bathrooms": bath_m.group(1) if bath_m else "",
             "Size (sqft)": size_m.group(1).replace(",", "") if size_m else "",
-            "Seller": seller,
             "Listing URL": urljoin(base_url, a["href"]),
             "Listed Date": listed_dt.strftime("%Y-%m-%d") if listed_dt else "",
             "Days Listed": (scrape_time - listed_dt).days if listed_dt else "",
