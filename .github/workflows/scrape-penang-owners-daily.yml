@@ -53,6 +53,8 @@ jobs:
           python scrape_penang_owners.py \
             $STATEWIDE_FLAG \
             --pages "$PAGES" \
+            --fetch-details \
+            --detail-limit 50 \
             --output penang_owners.xlsx \
             --seen-file penang_seen_listings.json \
             --gsheet-id "1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI" \
