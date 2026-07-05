@@ -75,6 +75,7 @@ jobs:
         run: |
           cp penang_owners.xlsx /tmp/penang_owners.xlsx
           cp penang_seen_listings.json /tmp/penang_seen_listings.json
+          rm -f penang_owners.xlsx penang_seen_listings.json
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if git fetch origin data/penang-owners-scrape; then
