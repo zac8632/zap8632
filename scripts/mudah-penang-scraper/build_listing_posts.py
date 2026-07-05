@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-Stage 1 of the social-content pipeline (see .claude/skills/penang-listing-posts/).
-
-Filters the daily scrape to high-value residential listings in the target areas,
-and for each qualifying listing downloads its real photos from mudah, then builds
-raw-native creatives + captions. Runs inside the GitHub Action.
-"""
+"""Stage 1: filter the scrape to qualifying listings and download full-res photos."""
 
 import argparse
 import json
@@ -69,7 +63,39 @@ def extract_list_id(url):
 
 
 NEXT_DATA_RE = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.DOTALL)
-IMG_URL_RE = re.compile(r'https?://[^"\'\\ ]+?\.(?:jpg|jpeg|png|webp)', re.IGNORECASE)
+URL_RE = re.compile(r'https?://[^\s"\'\\<>)]+', re.IGNORECASE)
+APOLLO_SIZE_RE = re.compile(r';s=\d+x\d+', re.IGNORECASE)
+_BAD = ("sprite", "logo", "icon", ".svg", "placeholder", "avatar", "favicon", "flag", "sprites")
+
+
+def _is_photo_url(u):
+    ul = u.lower()
+    if any(b in ul for b in _BAD):
+        return False
+    return ("apollo" in ul or "akamaized" in ul or ";s=" in ul
+            or re.search(r"\.(?:jpg|jpeg|png|webp)(?:\?|;|$)", ul))
+
+
+def _upsize(u):
+    return APOLLO_SIZE_RE.sub(";s=1600x1200", u)
+
+
+def _base_key(u):
+    return APOLLO_SIZE_RE.sub("", u.split("?")[0])
+
+
+def _all_strings(obj, out, depth=0):
+    if depth > 14:
+        return
+    if isinstance(obj, str):
+        if obj.startswith("http"):
+            out.append(obj)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _all_strings(v, out, depth + 1)
+    elif isinstance(obj, list):
+        for v in obj:
+            _all_strings(v, out, depth + 1)
 
 
 def find_ad_node(obj, list_id, _depth=0):
@@ -91,27 +117,8 @@ def find_ad_node(obj, list_id, _depth=0):
     return None
 
 
-def _urls_from(value):
-    out = []
-    if isinstance(value, str):
-        if IMG_URL_RE.fullmatch(value) or IMG_URL_RE.match(value):
-            out.append(value)
-    elif isinstance(value, dict):
-        for k in ("original", "full", "large", "url", "src", "link", "image"):
-            if isinstance(value.get(k), str):
-                out.append(value[k])
-                break
-        else:
-            for v in value.values():
-                out.extend(_urls_from(v))
-    elif isinstance(value, list):
-        for item in value:
-            out.extend(_urls_from(item))
-    return out
-
-
-def extract_image_urls(detail_html, list_id):
-    urls = []
+def extract_image_urls(detail_html, list_id, debug_path=None):
+    found, raw_media = [], None
     m = NEXT_DATA_RE.search(detail_html)
     if m:
         try:
@@ -119,30 +126,41 @@ def extract_image_urls(detail_html, list_id):
             node = find_ad_node(nd, list_id) or {}
             attrs = node.get("attributes", node) if isinstance(node, dict) else {}
             for key in ("images", "media", "photos", "gallery", "image"):
-                if attrs.get(key):
-                    urls.extend(_urls_from(attrs[key]))
-            if not urls:
-                urls.extend(_urls_from(node))
+                if attrs.get(key) is not None and raw_media is None:
+                    raw_media = {key: attrs.get(key)}
+            strs = []
+            _all_strings(node, strs)
+            found = [u for u in strs if _is_photo_url(u)]
         except Exception as e:
             print(f"  [images] {list_id}: JSON parse failed ({e}); regex fallback", file=sys.stderr)
-    if not urls:
-        urls = IMG_URL_RE.findall(detail_html)
-    seen, clean = set(), []
-    for u in urls:
-        if u in seen:
+    if not found:
+        found = [u for u in URL_RE.findall(detail_html) if _is_photo_url(u)]
+
+    seen, ordered = set(), []
+    for u in found:
+        up = _upsize(u)
+        k = _base_key(up)
+        if k in seen:
             continue
-        if re.search(r"(sprite|logo|icon|placeholder|avatar)", u, re.IGNORECASE):
-            continue
-        seen.add(u)
-        clean.append(u)
-    return clean
+        seen.add(k)
+        ordered.append(up)
+
+    if debug_path:
+        try:
+            with open(debug_path, "w") as f:
+                json.dump({"list_id": list_id, "count": len(ordered),
+                           "raw_media_sample": raw_media, "urls": ordered[:20]},
+                          f, indent=2, default=str)
+        except Exception:
+            pass
+    return ordered
 
 
 def polite_sleep(a=1.0, b=2.0):
     time.sleep(random.uniform(a, b))
 
 
-def fetch_and_download(session, row, out_dir):
+def fetch_and_download(session, row, out_dir, debug=False):
     url = row.get("Listing URL", "")
     list_id = extract_list_id(url)
     if not list_id:
@@ -156,8 +174,11 @@ def fetch_and_download(session, row, out_dir):
         print(f"  [detail] {url}: HTTP {r.status_code}", file=sys.stderr)
         return None
 
-    img_urls = extract_image_urls(r.text, list_id)
     listing_dir = os.path.join(out_dir, list_id)
+    os.makedirs(listing_dir, exist_ok=True)
+    img_urls = extract_image_urls(
+        r.text, list_id,
+        debug_path=os.path.join(listing_dir, "debug_images.json") if debug else None)
     photos_dir = os.path.join(listing_dir, "photos")
     os.makedirs(photos_dir, exist_ok=True)
 
@@ -257,11 +278,11 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     done = 0
-    for _, r in q.iterrows():
-        if fetch_and_download(session, r, args.out):
+    for idx, (_, r) in enumerate(q.iterrows()):
+        if fetch_and_download(session, r, args.out, debug=(idx == 0)):
             done += 1
         polite_sleep()
-    print(f"Downloaded photos for {done}/{len(q)} qualifying listings into {args.out}/", file=sys.stderr)
+    print(f"Downloaded photos for {done}/{len(q)} into {args.out}/", file=sys.stderr)
 
 
 if __name__ == "__main__":
