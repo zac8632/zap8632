@@ -1,0 +1,67 @@
+name: Build Listing Posts (Stage 1 test)
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Max qualifying listings to process (0 = all)"
+        required: false
+        default: "3"
+      new_only:
+        description: "Only 'Is New Today' listings"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: scripts/mudah-penang-scraper
+        run: pip install curl_cffi pandas openpyxl pillow
+
+      - name: Restore latest scrape from data branch
+        working-directory: scripts/mudah-penang-scraper
+        run: |
+          git fetch origin data/penang-owners-scrape
+          git show origin/data/penang-owners-scrape:scripts/mudah-penang-scraper/penang_owners.xlsx \
+            > penang_owners.xlsx
+
+      - name: Restore posted registry (dedup)
+        working-directory: scripts/mudah-penang-scraper
+        run: |
+          mkdir -p posts_input
+          git fetch origin data/listing-posts || true
+          git show origin/data/listing-posts:scripts/mudah-penang-scraper/posts_input/posted_registry.json \
+            > posts_input/posted_registry.json 2>/dev/null || echo "{}" > posts_input/posted_registry.json
+
+      - name: Filter and download listing photos
+        working-directory: scripts/mudah-penang-scraper
+        env:
+          LIMIT: ${{ github.event.inputs.limit || '3' }}
+          NEW_ONLY: ${{ github.event.inputs.new_only || 'false' }}
+        run: |
+          NEW_FLAG=""
+          if [ "$NEW_ONLY" = "true" ]; then NEW_FLAG="--new-only"; fi
+          python build_listing_posts.py \
+            --input penang_owners.xlsx \
+            --out posts_input \
+            --registry posts_input/posted_registry.json \
+            --limit "$LIMIT" \
+            $NEW_FLAG
+
+      - name: Upload posts_input for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: listing-posts-input
+          path: scripts/mudah-penang-scraper/posts_input
+          retention-days: 14
