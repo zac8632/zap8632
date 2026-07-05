@@ -27,7 +27,10 @@ jobs:
 
       - name: Install dependencies
         working-directory: scripts/mudah-penang-scraper
-        run: pip install curl_cffi pandas openpyxl pillow
+        run: |
+          pip install curl_cffi pandas openpyxl pillow numpy
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers
 
       - name: Restore latest scrape from data branch
         working-directory: scripts/mudah-penang-scraper
