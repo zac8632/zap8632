@@ -184,3 +184,60 @@ def remove_watermark(path, out_path=None, box=WATERMARK_BOX,
     out_arr = arr * (1 - mask) + restored * mask
     Image.fromarray(out_arr.astype(np.uint8), "RGB").save(out_path or path, quality=95)
     return True
+
+
+# Whole-image tiled-watermark removal (detect + LaMa inpaint). mudah's
+# watermark is a repeating diagonal tiled overlay across the ENTIRE frame,
+# not one fixed spot - remove_watermark() above only touched one region.
+_lama_cache = {}
+
+
+def detect_watermark_mask(img_rgb, brightness_thresh=10.0, sat_thresh=0.18, blur_radius=15):
+    from PIL import ImageFilter
+
+    img = Image.fromarray(img_rgb, "RGB")
+    gray = np.asarray(img.convert("L"), dtype=np.float64)
+    blurred = np.asarray(img.convert("L").filter(ImageFilter.GaussianBlur(blur_radius)),
+                          dtype=np.float64)
+    residual = gray - blurred
+
+    r = img_rgb[:, :, 0].astype(np.float64)
+    g = img_rgb[:, :, 1].astype(np.float64)
+    b = img_rgb[:, :, 2].astype(np.float64)
+    maxc = np.maximum(np.maximum(r, g), b)
+    minc = np.minimum(np.minimum(r, g), b)
+    sat = np.where(maxc > 0, (maxc - minc) / np.maximum(maxc, 1.0), 0.0)
+
+    mask = (residual > brightness_thresh) & (sat < sat_thresh)
+    mask_img = Image.fromarray((mask * 255).astype(np.uint8), "L")
+    mask_img = mask_img.filter(ImageFilter.MaxFilter(5))
+    mask_img = mask_img.filter(ImageFilter.GaussianBlur(2))
+    return np.asarray(mask_img)
+
+
+def inpaint_watermark(path, out_path=None):
+    try:
+        img = Image.open(path).convert("RGB")
+    except Exception:
+        return False
+
+    try:
+        from simple_lama_inpainting import SimpleLama
+    except ImportError:
+        print("  [curate] simple-lama-inpainting not installed - falling back to box de-blend", file=sys.stderr)
+        return remove_watermark(path, out_path)
+
+    if "lama" not in _lama_cache:
+        _lama_cache["lama"] = SimpleLama()
+    lama = _lama_cache["lama"]
+
+    img_rgb = np.asarray(img)
+    mask_arr = detect_watermark_mask(img_rgb)
+    if mask_arr.max() == 0:
+        img.save(out_path or path, quality=95)
+        return True
+
+    mask_img = Image.fromarray(mask_arr, "L")
+    result = lama(img, mask_img)
+    result.save(out_path or path, quality=95)
+    return True
