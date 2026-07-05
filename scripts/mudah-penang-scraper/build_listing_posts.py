@@ -255,8 +255,20 @@ def fetch_and_download(session, row, out_dir, debug=False):
             for c in curated
         ]
         curated_paths = [c["path"] for c in curated] or abs_photos[:5]
+
+        dewm_dir = os.path.join(listing_dir, "photos_dewatermarked")
+        os.makedirs(dewm_dir, exist_ok=True)
+        dewatermarked_paths = []
+        for p in curated_paths:
+            out_p = os.path.join(dewm_dir, os.path.basename(p))
+            if photo_curate.remove_watermark(p, out_p):
+                dewatermarked_paths.append(out_p)
+            else:
+                dewatermarked_paths.append(p)
+        listing["ai_enhanced"] = True
+
         creatives = post_content.render_creatives(
-            curated_paths, row, os.path.join(listing_dir, "creatives"))
+            dewatermarked_paths, row, os.path.join(listing_dir, "creatives"))
         listing["creatives"] = {
             k: [os.path.relpath(p, out_dir) for p in v] for k, v in creatives.items()
         }
