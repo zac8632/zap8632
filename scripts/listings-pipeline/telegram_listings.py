@@ -361,11 +361,22 @@ def poll_and_buffer(token, state):
                 f"{len(batch['texts'])} text message(s) received. Processing "
                 f"this listing now, no need to send anything else for it.")
         else:
+            got_photo = bool(msg.get("photo"))
             if text:
                 batch["texts"].append(text)
-            if msg.get("photo"):
+            if got_photo:
                 largest = max(msg["photo"], key=lambda p: p["width"])
                 batch["photo_file_ids"].append(largest["file_id"])
+            if text or got_photo:
+                # Acknowledge every message so the user always knows it was
+                # received and can see the running tally, instead of sending
+                # things into silence until the whole batch finalizes.
+                what = "photo" if got_photo else "text"
+                tg_send_message(
+                    token, chat_id,
+                    f"Got your {what} ({len(batch['photo_file_ids'])} photo(s), "
+                    f"{len(batch['texts'])} text message(s) so far). Send more, "
+                    f"or type 'done' when finished.")
         batch["last_msg_time"] = time.time()
 
     return state
@@ -385,6 +396,16 @@ def process_batches(token, state, out_dir, dry_run=False):
             continue
 
         chat_id = batch["chat_id"]
+        if not batch.get("confirmed") and not dry_run:
+            # Timed out idle rather than an explicit "done" - the confirmed
+            # path already told the user processing started, so only notify
+            # here for the silent-timeout path (otherwise they'd never know
+            # the bot picked it up without watching the workflow run).
+            tg_send_message(
+                token, chat_id,
+                f"No activity for a while - processing your listing now "
+                f"({len(batch['photo_file_ids'])} photo(s), "
+                f"{len(batch['texts'])} text message(s)).")
         text = "\n".join(batch["texts"])
         if text:
             listing = parse_listing_text(text)
