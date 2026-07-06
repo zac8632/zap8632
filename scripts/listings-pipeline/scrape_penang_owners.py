@@ -580,6 +580,11 @@ def scrape_category(session, label, base_url, max_pages, owner_only, debug_dump,
             has_wa = bool(inner.get("userParamsEnableWa")) if isinstance(inner, dict) else False
 
             params = extract_category_params(a)
+            if label == "rent-residential" and str(field_value(a, "property_type", params) or "").strip().lower() == "room":
+                # Single-room-in-shared-house rentals, not full property
+                # listings - never worth scraping at all, not just filtered
+                # out downstream.
+                continue
             results.append({
                 "Title":         build_title(a),
                 "Hero Image URL": extract_hero_image_url(item),
