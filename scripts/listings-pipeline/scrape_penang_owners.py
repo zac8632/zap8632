@@ -131,6 +131,23 @@ def extract_hero_image_url(item):
 # Field names this script tries for listing details, in priority order.
 # mudah.my's ad payload shape has varied across scrapes in this project -
 # if these come up empty, check --debug-dump output for the real key names.
+def classify_asset_type(property_type, default):
+    """Mudah's general properties-for-sale/for-rent search already mixes in
+    commercial, land, and room listings alongside residential ones - the
+    asset_type passed down from CATEGORIES only reflects which URL was
+    queried, not what a given listing actually is. Derive the real type
+    from its own Property Type text instead, falling back to the queried
+    category\'s asset_type when Property Type is missing."""
+    if not property_type:
+        return default
+    pt = str(property_type).lower()
+    if "land" in pt:
+        return "land"
+    if any(k in pt for k in ("commercial", "office", "shop", "retail", "industrial", "factory", "warehouse", "shoplot", "showroom")):
+        return "commercial"
+    return "residential"
+
+
 MUDAH_FIELD_CANDIDATES = {
     "project_name": ["projectName", "developmentName", "buildingName"],
     "headline":     ["subject", "title", "adTitle"],
@@ -569,7 +586,7 @@ def scrape_category(session, label, base_url, max_pages, owner_only, debug_dump,
                 "Category":      build_category(label, a),
                 "Listed Date":   format_date_ddmmyyyy(_first(a, MUDAH_FIELD_CANDIDATES["listed_at"])),
                 "Price":         format_price(_first(a, MUDAH_FIELD_CANDIDATES["price"])),
-                "Asset Type":    asset_type,
+                "Asset Type":    classify_asset_type(field_value(a, "property_type", params), asset_type),
                 "Property Type": field_value(a, "property_type", params),
                 "Location":      _first(a, MUDAH_FIELD_CANDIDATES["location"]),
                 "State":         _first(a, MUDAH_FIELD_CANDIDATES["state"]),

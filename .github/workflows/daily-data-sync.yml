@@ -53,6 +53,8 @@ jobs:
           python scrape_penang_owners.py \
             $STATEWIDE_FLAG \
             --pages "$PAGES" \
+            --fetch-details \
+            --detail-limit 50 \
             --output penang_owners.xlsx \
             --seen-file penang_seen_listings.json \
             --gsheet-id "1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI" \
@@ -73,10 +75,15 @@ jobs:
         run: |
           cp penang_owners.xlsx /tmp/penang_owners.xlsx
           cp penang_seen_listings.json /tmp/penang_seen_listings.json
+          rm -f penang_owners.xlsx penang_seen_listings.json
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin data/penang-owners-scrape || true
-          git checkout data/penang-owners-scrape 2>/dev/null || git checkout -b data/penang-owners-scrape
+          if git fetch origin data/penang-owners-scrape; then
+            git checkout -B data/penang-owners-scrape FETCH_HEAD
+          else
+            git checkout --orphan data/penang-owners-scrape
+            git rm -rf . > /dev/null 2>&1 || true
+          fi
           cp /tmp/penang_owners.xlsx penang_owners.xlsx
           cp /tmp/penang_seen_listings.json penang_seen_listings.json
           git add -f penang_owners.xlsx penang_seen_listings.json
