@@ -137,6 +137,10 @@ def qualifies_for(row, listing_type):
     else:
         if "for rent" not in cat:
             return False
+        if "room for rent" in cat:
+            # Single-room rentals (shared houses) aren't full subsale
+            # property listings - skip them entirely.
+            return False
         p = price_num(row.get("Price (RM)"))
         if p is None or p < RENT_PRICE_THRESHOLD:
             return False
