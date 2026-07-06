@@ -36,11 +36,19 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from build_listing_posts import qualifies, extract_list_id
-from post_content import headline, facts_line, price_lines, price_num, _clean
+from post_content import project_name, price_lines, price_num, _clean
 
 WHATSAPP_PHONE = "60105666924"
 REF_PREFIX = "PPM"
-DESCRIPTION_MAX_CHARS = 600
+
+# Sanity check on price-per-sqft, not a correction - some sellers type their
+# price into the free-text description using periods as thousand-separators
+# (e.g. "1593.350.00"), which mudah's own structured price field can then
+# misparse as 10x too high. We can't know which number is right from data
+# alone, so this only flags implausible listings for a human to check
+# instead of silently trusting (or silently "fixing") either number.
+MIN_PLAUSIBLE_PSF = 200
+MAX_PLAUSIBLE_PSF = 5000
 
 
 def load_registry(path):
@@ -93,36 +101,87 @@ def assign_ref(registry, list_id, row):
     return ref
 
 
-def whatsapp_link(ref, headline_text, phone=WHATSAPP_PHONE):
-    text = f"Hi, I'm interested in listing {ref} ({headline_text}). Is it still available?"
+def whatsapp_link(ref, title, phone=WHATSAPP_PHONE):
+    text = f"Hi, I'm interested in listing {ref} ({title}). Is it still available?"
     return f"https://wa.me/{phone}?text={urllib.parse.quote(text)}"
 
 
-def clean_description(v):
-    d = _clean(v)
-    if not d:
+def subsales_title(row):
+    """Condo/project name + area, e.g. "City Of Dreams, Tanjong Tokong" -
+    the project name only (project_name() already strips a trailing area
+    suffix from the owner's raw Title if present), so the area is added
+    back exactly once even if the owner's title didn't include it."""
+    proj = project_name(row)
+    area = _clean(row.get("Location"))
+    if proj and area and not proj.lower().endswith(area.lower()):
+        return f"{proj}, {area}"
+    return proj or area or "Property"
+
+
+def simple_description(row):
+    """A short composed sentence from known fields only (bedrooms,
+    bathrooms, size, tenure, property type, area) - never the owner's raw
+    free-text, which can be long, informal, or (as seen with one listing)
+    contain a conflicting price typed in a different format."""
+    ptype = _clean(row.get("Property Type")) or "Property"
+    area = _clean(row.get("Location"))
+    bd = _clean(row.get("Bedrooms"))
+    ba = _clean(row.get("Bathrooms"))
+    sz = _clean(row.get("Size (sqft)"))
+    tenure = _clean(row.get("Tenure"))
+
+    lead = ptype
+    if area:
+        lead += f" in {area}"
+
+    parts = []
+    if bd:
+        parts.append(f"{bd} bedroom{'s' if bd != '1' else ''}")
+    if ba:
+        parts.append(f"{ba} bathroom{'s' if ba != '1' else ''}")
+    if sz:
+        parts.append(f"{sz} sqft")
+    if tenure:
+        parts.append(tenure)
+
+    return f"{lead} - {', '.join(parts)}." if parts else f"{lead}."
+
+
+def price_flag(myr, row):
+    """Flags (does not correct) implausible price-per-sqft - e.g. a seller
+    typing their price into the free-text description with periods as
+    thousand-separators, which mudah's own structured price field can then
+    misparse as 10x too high. We can't tell which number is right from data
+    alone, so this is a "check before publishing" signal for a human, not
+    an automatic fix."""
+    sz = price_num(row.get("Size (sqft)"))
+    if not myr or not sz:
         return ""
-    if len(d) > DESCRIPTION_MAX_CHARS:
-        d = d[:DESCRIPTION_MAX_CHARS].rsplit(" ", 1)[0] + "..."
-    return d
+    psf = myr / sz
+    if psf < MIN_PLAUSIBLE_PSF or psf > MAX_PLAUSIBLE_PSF:
+        return f"CHECK PRICE - RM {psf:,.0f}/sqft looks implausible, verify against the source listing"
+    return ""
 
 
 def build_row(row, ref, listing_date):
     myr = price_num(row.get("Price (RM)"))
     myr_s, approx = price_lines(myr)
-    hl = headline(row)
+    title = subsales_title(row)
     return {
         "Listing Date": listing_date,
         "Ref": ref,
-        "Title": hl,
+        "Title": title,
         "Price (RM)": myr_s or "",
         "Price Approx": approx or "",
-        "Facts": facts_line(row),
+        "Price Flag": price_flag(myr, row),
+        "Bedrooms": _clean(row.get("Bedrooms")) or "",
+        "Bathrooms": _clean(row.get("Bathrooms")) or "",
+        "Size (sqft)": _clean(row.get("Size (sqft)")) or "",
         "Property Type": _clean(row.get("Property Type")) or "",
         "Location": _clean(row.get("Location")) or "",
         "Tenure": _clean(row.get("Tenure")) or "",
-        "Description": clean_description(row.get("Description")),
-        "WhatsApp Link": whatsapp_link(ref, hl),
+        "Description": simple_description(row),
+        "WhatsApp Link": whatsapp_link(ref, title),
         "Category": "Subsales",
         "Mudah URL (internal only)": row.get("Listing URL") or "",
         "Published to Site": "",
