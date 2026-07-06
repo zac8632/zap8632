@@ -4,34 +4,33 @@ Pushes finalized Telegram listings (parsed, photo-curated, creative-rendered,
 caption-written by telegram_listings.py) into the "Master Listings" table of
 the Lead Pipeline Airtable base.
 
-Airtable's attachment fields need a fetchable URL, not a local file - so this
-script expects the curated photos/creatives it's about to link have ALREADY
-been committed to a public data branch by the calling workflow (inbox-bot.yml,
-step "Commit media to data branch"), and builds raw.githubusercontent.com
-URLs from that commit. Run this AFTER that commit step, not standalone.
+Uploads photos/creatives via Airtable's direct attachment-upload endpoint
+(base64 file content, no public URL needed) - earlier versions of this script
+required committing media to a public git branch first so Airtable could
+fetch it via raw.githubusercontent.com, which meant every forwarded photo
+became publicly reachable. Direct upload avoids that entirely.
 
 Safe to re-run: skips any batch whose listId/Batch ID already has a Master
 Listings record (checked via the Airtable API), so a retried workflow run
 doesn't create duplicate rows.
 """
 import argparse
+import base64
 import glob
 import json
+import mimetypes
 import os
 import sys
 
 import requests
 
 API_ROOT = "https://api.airtable.com/v0"
+CONTENT_ROOT = "https://content.airtable.com/v0"
 TABLE_NAME = "Master Listings"
 
 
 def _headers(token):
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
-
-def _raw_url(repo, branch, path):
-    return f"https://raw.githubusercontent.com/{repo}/{branch}/{path}"
 
 
 def record_exists(base_id, token, batch_id):
@@ -50,15 +49,25 @@ def create_record(base_id, token, fields):
     return r.json()
 
 
-def build_fields(listing, media_repo, media_branch, media_prefix, curated_photo_names, creative_names, caption_text):
-    photo_urls = [
-        {"url": _raw_url(media_repo, media_branch, f"{media_prefix}/photos/{name}")}
-        for name in curated_photo_names
-    ]
-    creative_urls = [
-        {"url": _raw_url(media_repo, media_branch, f"{media_prefix}/creatives/{name}")}
-        for name in creative_names
-    ]
+def upload_attachment(base_id, token, record_id, field_name, file_path):
+    """Uploads one local file straight to an attachment field via Airtable's
+    content API - no public URL, no git commit needed."""
+    content_type = mimetypes.guess_type(file_path)[0] or "application/octet-stream"
+    with open(file_path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode("ascii")
+    url = f"{CONTENT_ROOT}/{base_id}/{record_id}/{field_name}/uploadAttachment"
+    r = requests.post(url, headers=_headers(token), json={
+        "contentType": content_type,
+        "file": b64,
+        "filename": os.path.basename(file_path),
+    })
+    if r.status_code >= 400:
+        print(f"  [error] uploading {file_path}: {r.status_code} {r.text}", file=sys.stderr)
+        return False
+    return True
+
+
+def build_fields(listing, caption_text):
     fields = {
         "Title": listing.get("Title") or listing.get("_batch_id"),
         "Source": "telegram",
@@ -77,10 +86,6 @@ def build_fields(listing, media_repo, media_branch, media_prefix, curated_photo_
     }
     if listing.get("Price (RM)"):
         fields["Price (RM)"] = listing["Price (RM)"]
-    if creative_urls:
-        fields["Hero Image"] = creative_urls[:1]
-    if photo_urls:
-        fields["Photos"] = photo_urls
     return {k: v for k, v in fields.items() if v not in (None, "", [])}
 
 
@@ -109,8 +114,6 @@ def main():
     ap.add_argument("--base-id", required=True)
     ap.add_argument("--telegram-dir", required=True,
                      help="telegram_input dir with one subdirectory per finalized batch")
-    ap.add_argument("--media-repo", required=True, help="owner/repo the media was committed to")
-    ap.add_argument("--media-branch", required=True, help="data branch the media was committed to")
     args = ap.parse_args()
 
     token = (os.environ.get("AIRTABLE_API_KEY") or "").strip()
@@ -136,18 +139,22 @@ def main():
             print(f"  [skip] {batch_id}: already synced")
             continue
 
-        photo_names = sorted(os.path.basename(p) for p in
-                              glob.glob(os.path.join(batch_dir, "photos", "*")))
-        creative_names = sorted(os.path.basename(p) for p in
-                                 glob.glob(os.path.join(batch_dir, "creatives", "*"))
+        photo_paths = sorted(glob.glob(os.path.join(batch_dir, "photos", "*")))
+        creative_paths = sorted(p for p in glob.glob(os.path.join(batch_dir, "creatives", "*"))
                                  if os.path.isfile(p))
         caption_text = _first_caption(os.path.join(batch_dir, "captions.md"))
-        media_prefix = f"scripts/listings-pipeline/telegram_input/{batch_id}"
 
-        fields = build_fields(listing, args.media_repo, args.media_branch, media_prefix,
-                               photo_names, creative_names, caption_text)
-        create_record(args.base_id, token, fields)
-        print(f"  [ok] {batch_id}: synced to Master Listings")
+        fields = build_fields(listing, caption_text)
+        record = create_record(args.base_id, token, fields)
+        record_id = record["id"]
+
+        for p in creative_paths[:1]:
+            upload_attachment(args.base_id, token, record_id, "Hero Image", p)
+        for p in photo_paths:
+            upload_attachment(args.base_id, token, record_id, "Photos", p)
+
+        print(f"  [ok] {batch_id}: synced to Master Listings "
+              f"({len(creative_paths[:1])} hero image, {len(photo_paths)} photos uploaded)")
 
 
 if __name__ == "__main__":

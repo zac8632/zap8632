@@ -79,6 +79,11 @@ RENT_RE = re.compile(r"\b(for rent|to let|rental)\b", re.IGNORECASE)
 # timer. Matches on its own line/message so it can't accidentally trigger
 # mid-sentence in a real listing description.
 CONFIRM_RE = re.compile(r"^\s*(done|confirm|confirmed|ready|go|✅|👍)\s*[.!]?\s*$", re.IGNORECASE)
+# Sent to explicitly discard whatever's buffered so far before starting a new
+# listing - the safety valve for "forgot to send 'done' before pasting the
+# next one", since batching otherwise has no way to know a new listing has
+# started (see poll_and_buffer()).
+RESET_RE = re.compile(r"^\s*(new|reset|start over|clear|cancel)\s*[.!]?\s*$", re.IGNORECASE)
 # Generic banner lines ("FOR SALE!!", "HOT LISTING") that aren't useful as a
 # Title - skip these when picking the first line, they carry no project info.
 BANNER_LINE_RE = re.compile(
@@ -328,12 +333,24 @@ def poll_and_buffer(token, state):
             print(f"  [telegram] ignoring message from unauthorised chat_id={chat_id}", file=sys.stderr)
             continue
 
-        batch = pending.setdefault(chat_id, {
-            "first_msg_time": time.time(), "last_msg_time": time.time(),
+        # Key batches by (chat, sender), not just chat - so if this bot ever
+        # ends up in a group instead of 1:1, two different people's
+        # submissions in the same chat never merge into one batch.
+        sender_id = str((msg.get("from") or {}).get("id", "0"))
+        batch_key = f"{chat_id}:{sender_id}"
+
+        text = msg.get("text") or msg.get("caption")
+        if text and RESET_RE.match(text):
+            if batch_key in pending:
+                del pending[batch_key]
+                tg_send_message(token, chat_id, "Cleared - send the next listing whenever you're ready.")
+            continue
+
+        batch = pending.setdefault(batch_key, {
+            "chat_id": chat_id, "first_msg_time": time.time(), "last_msg_time": time.time(),
             "texts": [], "photo_file_ids": [], "confirmed": False,
         })
 
-        text = msg.get("text") or msg.get("caption")
         if text and CONFIRM_RE.match(text) and (batch["texts"] or batch["photo_file_ids"]):
             # A confirm signal on an EMPTY batch is just noise (nothing to
             # confirm yet) - only finalize a batch that actually has content.
@@ -363,10 +380,11 @@ def process_batches(token, state, out_dir, dry_run=False):
     now = time.time()
     finalized = []
 
-    for chat_id, batch in list(pending.items()):
+    for batch_key, batch in list(pending.items()):
         if not batch.get("confirmed") and now - batch["last_msg_time"] <= BATCH_IDLE_SECONDS:
             continue
 
+        chat_id = batch["chat_id"]
         text = "\n".join(batch["texts"])
         if text:
             listing = parse_listing_text(text)
@@ -379,7 +397,7 @@ def process_batches(token, state, out_dir, dry_run=False):
                 "Category": "Property For Sale",
             }
         listing["_chat_id"] = chat_id
-        listing["_batch_id"] = f"{chat_id}_{int(batch['first_msg_time'])}"
+        listing["_batch_id"] = f"{batch_key.replace(':', '_')}_{int(batch['first_msg_time'])}"
         listing_dir = os.path.join(out_dir, listing["_batch_id"])
         photos_dir = os.path.join(listing_dir, "photos")
         os.makedirs(photos_dir, exist_ok=True)
@@ -405,7 +423,7 @@ def process_batches(token, state, out_dir, dry_run=False):
 
         if listing["Title"] or saved:
             finalized.append(listing)
-        del pending[chat_id]
+        del pending[batch_key]
 
     return finalized
 
