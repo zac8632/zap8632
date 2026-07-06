@@ -72,7 +72,12 @@ def _headers(token):
 
 def list_tables(base_id, token):
     r = requests.get(f"{META_ROOT}/bases/{base_id}/tables", headers=_headers(token))
-    r.raise_for_status()
+    if r.status_code >= 400:
+        # This repo is public - never print any part of the token itself,
+        # only metadata that helps diagnose without leaking the secret.
+        print(f"  [error] listing tables: {r.status_code} {r.text}", file=sys.stderr)
+        print(f"  [debug] token length={len(token)} chars", file=sys.stderr)
+        r.raise_for_status()
     return r.json()["tables"]
 
 
