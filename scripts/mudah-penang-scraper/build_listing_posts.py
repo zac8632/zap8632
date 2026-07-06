@@ -305,22 +305,17 @@ def fetch_and_download(session, row, out_dir, debug=False):
         ]
         curated_paths = [c["path"] for c in curated] or abs_photos[:5]
 
-        # Tier 2 (rules-and-constraints.md): un-blend mudah's watermark on a
-        # COPY of each curated photo (original kept untouched for comparison/
-        # audit). ai_enhanced=true is always set here for reviewer approval.
-        dewm_dir = os.path.join(listing_dir, "photos_dewatermarked")
-        os.makedirs(dewm_dir, exist_ok=True)
-        dewatermarked_paths = []
-        for p in curated_paths:
-            out_p = os.path.join(dewm_dir, os.path.basename(p))
-            if photo_curate.inpaint_watermark(p, out_p):
-                dewatermarked_paths.append(out_p)
-            else:
-                dewatermarked_paths.append(p)
-        listing["ai_enhanced"] = True
-
+        # Watermark removal DISABLED: the heuristic mask (bright + low-
+        # saturation) also flags sky/sea/mirror/plain-wall content, which is
+        # common in real estate photos, not rare - LaMa inpainted over large
+        # real parts of the photo instead of just the watermark and destroyed
+        # them. Shipping the original photo (watermark visible but intact) is
+        # far better than a ruined one. See photo_curate.py for the disabled
+        # inpaint_watermark()/remove_watermark() functions if this gets
+        # revisited with a properly trained watermark detector instead of a
+        # heuristic mask.
         creatives = post_content.render_creatives(
-            dewatermarked_paths, row, os.path.join(listing_dir, "creatives"))
+            curated_paths, row, os.path.join(listing_dir, "creatives"))
         listing["creatives"] = {
             k: [os.path.relpath(p, out_dir) for p in v] for k, v in creatives.items()
         }

@@ -33,8 +33,11 @@ CORE_CATEGORIES = ["exterior/facade", "living room", "kitchen", "bedroom", "bath
 # Landed homes often have MORE distinct spaces than a condo unit - these fill
 # extra slots (or replace a missing core category) instead of duplicating
 # e.g. two bedroom shots when a dining room or garden photo is available.
+# "scenic view" listed first since it's a real marketing asset for coastal/
+# hillside listings (sea view, hill view) - promote to CORE_CATEGORIES if it
+# should be guaranteed on every post rather than a fallback fill.
 EXTRA_CATEGORIES = [
-    "dining room", "garden or compound", "car porch or garage",
+    "scenic view", "dining room", "garden or compound", "car porch or garage",
     "balcony or patio", "staircase or hallway",
 ]
 
@@ -46,6 +49,7 @@ _LABEL_PROMPTS = {
     "kitchen": "a kitchen interior",
     "bedroom": "a bedroom interior",
     "bathroom": "a bathroom interior",
+    "scenic view": "a scenic sea view or hill view seen through a window or from a balcony",
     "dining room": "a dining room interior",
     "garden or compound": "a garden or outdoor compound of a house",
     "car porch or garage": "a car porch or garage",
