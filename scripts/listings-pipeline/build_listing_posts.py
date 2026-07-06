@@ -163,11 +163,17 @@ def extract_image_urls(detail_html, list_id, debug_path=None):
             nd = json.loads(m.group(1))
             node = find_ad_node(nd, list_id) or {}
             attrs = node.get("attributes", node) if isinstance(node, dict) else {}
+            # Merge EVERY matching gallery-like key, not just the first one
+            # found - if mudah stores separate keys for different quality
+            # tiers (e.g. a thumbnail "images" list alongside a full-size
+            # "photos" list), only scoping to the first match would silently
+            # drop the better one.
             for key in ("images", "media", "photos", "gallery", "image"):
-                if attrs.get(key) is not None and raw_media is None:
-                    raw_media = {key: attrs.get(key)}
+                if attrs.get(key) is not None:
+                    raw_media = raw_media or {}
+                    raw_media[key] = attrs.get(key)
             strs = []
-            # Scope the search to the actual gallery field when we found one,
+            # Scope the search to the actual gallery field(s) when found,
             # instead of the whole ad node - scanning the whole node can pick
             # up unrelated small images living elsewhere in the same JSON
             # (seller avatar, nested related-ads blocks) alongside the real
@@ -210,6 +216,17 @@ def extract_image_urls(detail_html, list_id, debug_path=None):
               f"first 3 (post-upsize):", file=sys.stderr)
         for u in ordered[:3]:
             print(f"    {u}", file=sys.stderr)
+        # Print the actual gallery-field JSON structure so we can see with
+        # our own eyes whether mudah's data has separate quality tiers (e.g.
+        # a nested {"thumb": ..., "full": ...} per photo) that a flat string
+        # scan might not be surfacing distinctly, instead of guessing.
+        try:
+            dump = json.dumps(raw_media, indent=2, default=str)
+        except Exception:
+            dump = str(raw_media)
+        print(f"  [images] {list_id}: raw gallery JSON structure "
+              f"(truncated to 1500 chars):", file=sys.stderr)
+        print(f"    {dump[:1500]}", file=sys.stderr)
     return ordered
 
 
@@ -240,6 +257,19 @@ def _url_variants(u):
         for tier in ("original", "full", "large", "orig", "source"):
             variants.append((f"plain-to-{tier}", _PLAIN_PATH_RE.sub(f"/images/{tier}/", u)))
     return variants
+
+
+_OG_IMAGE_RE = re.compile(
+    r'<meta[^>]+(?:property|name)=["\'](?:og:image|twitter:image)["\'][^>]+content=["\']([^"\']+)["\']',
+    re.IGNORECASE)
+
+
+def _extract_og_image(detail_html):
+    """Sites often set a nicer/bigger share-preview image via Open Graph or
+    Twitter Card meta tags than what's in the gallery JSON - worth checking
+    as a genuinely different source, not a rewrite of the same gallery URL."""
+    m = _OG_IMAGE_RE.search(detail_html)
+    return m.group(1) if m else None
 
 
 def _probe_url_variants(session, url, out_path_prefix):
@@ -300,6 +330,13 @@ def fetch_and_download(session, row, out_dir, debug=False):
         print(f"  [probe] testing URL variants for photo 1 of {list_id}...", file=sys.stderr)
         _probe_url_variants(session, img_urls[0], os.path.join(probe_dir, "photo1"))
 
+        og_image = _extract_og_image(r.text)
+        if og_image:
+            print(f"  [probe] found og:image/twitter:image meta tag: {og_image}", file=sys.stderr)
+            _probe_url_variants(session, og_image, os.path.join(probe_dir, "og_image"))
+        else:
+            print(f"  [probe] no og:image/twitter:image meta tag found", file=sys.stderr)
+
     # Real mudah gallery photos come back at 360x480 (confirmed via a live
     # probe - no larger version exists at this CDN). This threshold is well
     # below that, so it only catches genuinely tiny stray images (seller
@@ -320,6 +357,12 @@ def fetch_and_download(session, row, out_dir, debug=False):
                     from PIL import Image
                     with Image.open(fn) as im:
                         w, h = im.size
+                    if debug:
+                        # Real evidence of resolution/quality per photo,
+                        # instead of assuming from a single probe - user
+                        # reported the downloaded photos look blurry/low-res.
+                        print(f"  [img] {list_id} photo {i}: {w}x{h}, "
+                              f"{len(ir.content)} bytes ({iu})", file=sys.stderr)
                     if w < MIN_PHOTO_DIM or h < MIN_PHOTO_DIM:
                         print(f"  [img] skipping {iu}: too small ({w}x{h}), "
                               f"likely a stray icon/avatar not a listing photo",
