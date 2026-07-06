@@ -98,5 +98,9 @@ jobs:
           fi
           cp /tmp/subsales_registry.json subsales_registry.json
           git add -f subsales_registry.json
-          git commit -m "Subsales ref registry ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
-          git push origin data/subsales-registry
+          if git diff --cached --quiet; then
+            echo "Registry unchanged since last run - nothing to commit."
+          else
+            git commit -m "Subsales ref registry ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+            git push origin data/subsales-registry
+          fi

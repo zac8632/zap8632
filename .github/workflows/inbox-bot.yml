@@ -141,5 +141,9 @@ jobs:
           mkdir -p telegram_input
           cp /tmp/telegram_state.json telegram_input/telegram_state.json
           git add -f telegram_input/telegram_state.json
-          git commit -m "Telegram bot state ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
-          git push origin data/telegram-bot-state
+          if git diff --cached --quiet; then
+            echo "Bot state unchanged since last run - nothing to commit."
+          else
+            git commit -m "Telegram bot state ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+            git push origin data/telegram-bot-state
+          fi

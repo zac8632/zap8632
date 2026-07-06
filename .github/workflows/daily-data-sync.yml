@@ -87,5 +87,9 @@ jobs:
           cp /tmp/penang_owners.xlsx penang_owners.xlsx
           cp /tmp/penang_seen_listings.json penang_seen_listings.json
           git add -f penang_owners.xlsx penang_seen_listings.json
-          git commit -m "Scrape results ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
-          git push origin data/penang-owners-scrape
+          if git diff --cached --quiet; then
+            echo "Scrape output unchanged since last run - nothing to commit."
+          else
+            git commit -m "Scrape results ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+            git push origin data/penang-owners-scrape
+          fi
