@@ -1,0 +1,178 @@
+name: Inbox Bot
+
+# Polls a Telegram bot for personally-submitted listings (WhatsApp text +
+# photos forwarded into Telegram), extracts what it can from the free text,
+# downloads photos at full original quality (no watermark - this is the
+# whole point of this second source vs mudah), and runs them through the
+# same photo_curate.py + post_content.py pipeline.
+#
+# SETUP REQUIRED before this does anything useful:
+#   1. Create a bot via @BotFather on Telegram, get its token.
+#   2. Add it as a repo secret named TELEGRAM_BOT_TOKEN.
+#   3. Message the bot once from your own Telegram account - the run log
+#      will print "unauthorised chat_id=<N>"; add that chat_id to
+#      ALLOWED_CHAT_IDS in scripts/listings-pipeline/telegram_listings.py.
+#   4. Re-run. Only whitelisted chat_ids are ever processed.
+#   5. (Optional, for the private agent-contact log) Create/reuse a PRIVATE
+#      Google Sheet, share it with the same service account's client_email
+#      already used for the mudah pipeline, and set repo VARIABLE
+#      TELEGRAM_LOG_GSHEET_ID to its ID. Reuses secret GSHEET_SERVICE_ACCOUNT_JSON
+#      - nothing new to create there. This repo is PUBLIC, so this log
+#      deliberately never touches git or a workflow artifact - see context.md.
+#
+# Runs on a short interval since it's just polling getUpdates (cheap, no
+# long-running process needed) - start with workflow_dispatch while testing,
+# switch the schedule on once confirmed working.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch + parse only, skip photo download/rendering"
+        required: false
+        default: "true"
+      force_flush:
+        description: "Process pending batches immediately (ignore idle timer) - for testing"
+        required: false
+        default: "true"
+      airtable_base_id:
+        description: "Airtable base ID to sync finalized listings into (blank = skip Airtable sync)"
+        required: false
+        default: "appwkcMDwzNN9NTuo"
+  # Uncomment once ALLOWED_CHAT_IDS is configured and a manual test run looks right:
+  # schedule:
+  #   - cron: "*/10 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: scripts/listings-pipeline
+        run: |
+          pip install requests pillow numpy pandas openpyxl gspread google-auth
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers
+
+      - name: Restore bot state (offset + pending batches) from data branch
+        working-directory: scripts/listings-pipeline
+        run: |
+          mkdir -p telegram_input
+          git fetch origin data/telegram-bot-state || true
+          git show origin/data/telegram-bot-state:scripts/listings-pipeline/telegram_input/telegram_state.json \
+            > telegram_input/telegram_state.json 2>/dev/null \
+            || echo '{"last_update_id": 0, "pending": {}}' > telegram_input/telegram_state.json
+
+      - name: Write Google service-account key from secret (private log only)
+        if: ${{ vars.TELEGRAM_LOG_GSHEET_ID != '' }}
+        working-directory: scripts/listings-pipeline
+        run: echo '${{ secrets.GSHEET_SERVICE_ACCOUNT_JSON }}' > gsheet_key.json
+
+      - name: Poll Telegram and process any finalized listings
+        working-directory: scripts/listings-pipeline
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_LOG_GSHEET_ID: ${{ vars.TELEGRAM_LOG_GSHEET_ID }}
+          TELEGRAM_LOG_GSHEET_KEY: gsheet_key.json
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
+          FORCE_FLUSH: ${{ github.event.inputs.force_flush || 'true' }}
+        run: |
+          FLAGS=""
+          if [ "$DRY_RUN" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
+          if [ "$FORCE_FLUSH" = "true" ]; then FLAGS="$FLAGS --force-flush"; fi
+          python telegram_listings.py \
+            --out telegram_input \
+            --state telegram_input/telegram_state.json \
+            $FLAGS
+
+      - name: Remove service-account key before upload/commit
+        if: always()
+        working-directory: scripts/listings-pipeline
+        run: rm -f gsheet_key.json
+
+      - name: Upload telegram_input for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: telegram-listing-output
+          path: scripts/listings-pipeline/telegram_input
+          retention-days: 14
+
+      # Airtable attachment fields need a fetchable URL, not a local file -
+      # commit each finalized batch's curated photos + rendered creatives to
+      # a public data branch first, then airtable_sync.py links to them via
+      # raw.githubusercontent.com. Skipped entirely for dry runs (nothing was
+      # rendered) or if no batches finalized this run.
+      - name: Commit finalized listing media to data branch
+        id: commit_media
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        working-directory: scripts/listings-pipeline
+        run: |
+          shopt -s nullglob
+          batches=(telegram_input/*/)
+          if [ ${#batches[@]} -eq 0 ]; then
+            echo "No finalized batches this run - nothing to commit."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cp -r telegram_input /tmp/telegram_input_media
+          rm -f /tmp/telegram_input_media/telegram_state.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git fetch origin data/telegram-listing-media; then
+            git checkout -B data/telegram-listing-media FETCH_HEAD
+          else
+            git checkout --orphan data/telegram-listing-media
+            git rm -rf . > /dev/null 2>&1 || true
+          fi
+          mkdir -p scripts/listings-pipeline/telegram_input
+          cp -r /tmp/telegram_input_media/* scripts/listings-pipeline/telegram_input/
+          git add -f scripts/listings-pipeline/telegram_input
+          if git diff --cached --quiet; then
+            echo "No new media to commit."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Telegram listing media ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+            git push origin data/telegram-listing-media
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+          fi
+          git checkout "${GITHUB_REF_NAME}" -- .
+
+      - name: Sync finalized listings to Airtable
+        if: ${{ github.event.inputs.dry_run != 'true' && github.event.inputs.airtable_base_id != '' && steps.commit_media.outputs.committed == 'true' }}
+        working-directory: scripts/listings-pipeline
+        env:
+          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+        run: |
+          python airtable_sync.py \
+            --base-id "${{ github.event.inputs.airtable_base_id }}" \
+            --telegram-dir telegram_input \
+            --media-repo "${{ github.repository }}" \
+            --media-branch data/telegram-listing-media
+
+      - name: Commit bot state back to data branch (so the offset persists)
+        working-directory: scripts/listings-pipeline
+        run: |
+          cp telegram_input/telegram_state.json /tmp/telegram_state.json
+          rm -f telegram_input/telegram_state.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git fetch origin data/telegram-bot-state; then
+            git checkout -B data/telegram-bot-state FETCH_HEAD
+          else
+            git checkout --orphan data/telegram-bot-state
+            git rm -rf . > /dev/null 2>&1 || true
+          fi
+          mkdir -p telegram_input
+          cp /tmp/telegram_state.json telegram_input/telegram_state.json
+          git add -f telegram_input/telegram_state.json
+          git commit -m "Telegram bot state ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          git push origin data/telegram-bot-state
