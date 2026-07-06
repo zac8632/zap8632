@@ -211,17 +211,28 @@ def polite_sleep(a=1.0, b=2.0):
     time.sleep(random.uniform(a, b))
 
 
+_PLAIN_PATH_RE = re.compile(r'/images/plain/', re.IGNORECASE)
+
+
 def _url_variants(u):
-    """Candidate rewrites of an Apollo/CDN photo URL to probe for the true
-    high-res original, instead of guessing one swap and hoping. Returns
-    [(label, url), ...]. Tried in order: as-scraped, size token swapped bigger,
-    and the size token removed entirely (many CDNs serve the original upload
-    when no resize parameter is given at all)."""
+    """Candidate rewrites of a mudah CDN photo URL to probe for the true
+    high-res/original asset, instead of guessing one swap and hoping. Returns
+    [(label, url), ...].
+
+    The old ";s=WxH" Apollo-CDN size token this was written against no
+    longer matches mudah's real current URL format (confirmed via a live
+    run: their CDN is cdn.rnudah.com/images/plain/{hash}-{id}.jpg, no size
+    query param at all) - so that assumption was silently untested dead
+    code. Now also try swapping the "plain" path segment for other size/
+    quality tiers this kind of image-CDN path convention commonly uses."""
     variants = [("as-scraped", u)]
     if APOLLO_SIZE_RE.search(u):
         variants.append(("upsized-1600", APOLLO_SIZE_RE.sub(";s=1600x1600", u)))
         variants.append(("upsized-2400", APOLLO_SIZE_RE.sub(";s=2400x2400", u)))
         variants.append(("no-size-param", APOLLO_SIZE_RE.sub("", u)))
+    if _PLAIN_PATH_RE.search(u):
+        for tier in ("original", "full", "large", "orig", "source"):
+            variants.append((f"plain-to-{tier}", _PLAIN_PATH_RE.sub(f"/images/{tier}/", u)))
     return variants
 
 
