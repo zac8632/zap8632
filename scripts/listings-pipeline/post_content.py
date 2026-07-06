@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Stage 2 content builder for the penang-listing-posts skill.
+Stage 2 content builder for the listing-content-studio skill.
 
   build_captions(listing)   -> per-platform captions (raw, native, no hashtags,
                                soft CTA, no contact info).

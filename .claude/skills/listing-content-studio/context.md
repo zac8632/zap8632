@@ -104,11 +104,89 @@ Notes:
 
 ## Data source
 - Primary: `origin/data/penang-owners-scrape` →
-  `scripts/mudah-penang-scraper/penang_owners.xlsx` (committed daily by the
+  `scripts/listings-pipeline/penang_owners.xlsx` (committed daily by the
   GitHub Action).
 - Read with `dtype=str` to preserve phone/price formatting.
 - Google Sheet (live mirror):
   https://docs.google.com/spreadsheets/d/1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI/edit
+
+## Second source — Telegram bot (personal listings, non-mudah)
+`telegram_listings.py` + `.github/workflows/telegram-listing-bot.yml`. The
+user personally forwards a WhatsApp listing (free-text description + photos,
+often from other agents) into a Telegram chat with our bot. Personal-use
+only, one whitelisted chat_id - not a shared/multi-colleague tool. The
+workflow polls Telegram's `getUpdates` API (cheap, no persistent process
+needed - GitHub Actions can't run a long-lived listener anyway), buffers
+messages per chat, and finalizes a "batch" as one listing once that chat has
+been idle for `BATCH_IDLE_SECONDS` (10 min default) - covers sending photos
+and caption as separate messages in either order.
+
+**Why this source exists**: photos come from Telegram's own file API at full
+original quality - no mudah watermark, no CDN downscaling. This is the answer
+to the watermark problem, not a heuristic fix on the mudah side (see "Image
+policy" above - both automated mudah watermark-removal attempts were
+abandoned).
+
+**Field extraction** is regex/keyword-based (mirrors the scraper's own
+extraction style) and handles both common listing-text styles seen in real
+samples:
+- Inline: "3+1 bedrooms", "RM2.4mil", "freehold", "1,920sf".
+- Reversed label style (from template-based agent listings): "Bedroom：5",
+  "Built-Up (sqft) : 2899", "Land Area (sqft) : 1650" - including the
+  full-width "：" colon some templates use. "RM 998 K" (thousand suffix) is
+  also handled alongside the "mil"/"million" shorthand.
+- Also extracted: tenure, furnishing, facing, asset/property type (keyword-
+  classified: terrace/semi-d/bungalow → landed; condo/apartment/studio →
+  condominium; shop/office/retail → commercial), for-sale vs for-rent.
+
+Every field traces to text actually typed - unclear fields are left blank,
+same no-hallucination rule as everywhere else. Title = the first substantive
+line: generic banner lines ("FOR SALE") and label-only lines with no value
+yet ("Property Address :") are both skipped in favour of the next real line.
+
+**The agent's own name/phone line is stripped out entirely** before it ever
+reaches Description, Title, or any field a caption/creative could draw from -
+see `extract_agent_and_strip()`. It's kept ONLY in a private
+`_agent_contact_internal` field, which itself never gets written to
+`listing_raw.json` (that file ends up in a public workflow artifact - see
+below) or to git. It's fed only to `sync_agent_log_to_gsheet()`.
+
+**Private agent-contact log — must NOT go through git.** This repo is
+PUBLIC: a "data branch" is just a public git branch, and workflow artifacts
+on a public repo are publicly downloadable with no login. So the log
+(listing facts + agent name/phone, kept for the user's own reference) is
+synced straight to a **private Google Sheet** via `sync_agent_log_to_gsheet()`
+- reusing the same `GSHEET_SERVICE_ACCOUNT_JSON` secret already set up for the
+mudah pipeline, pointed at a repo variable `TELEGRAM_LOG_GSHEET_ID` (a
+separate Sheet from the public-facing property one, shared with the same
+service account's client_email). `append_to_excel_log()` still exists in the
+file as a local/manual-testing helper only - never wire its output path into
+anything committed or uploaded.
+
+**Setup required before this does anything** (one-time):
+1. Create a bot via **@BotFather** on Telegram → get a token.
+2. Add it as a GitHub repo secret named `TELEGRAM_BOT_TOKEN`.
+3. Message the bot once from your own Telegram account - the run log prints
+   `unauthorised chat_id=<N>` for any sender not yet whitelisted.
+4. Add that chat_id to `ALLOWED_CHAT_IDS` in `telegram_listings.py` (empty set
+   = reject everyone, the safe default until configured).
+5. (Optional) Create/reuse a private Google Sheet for the agent-contact log,
+   share it with the service account's client_email, set repo variable
+   `TELEGRAM_LOG_GSHEET_ID` to its ID.
+6. Test manually via `workflow_dispatch` (`dry_run: true` first, to check
+   extraction without downloading/rendering anything) before enabling the
+   commented-out `schedule` trigger in the workflow.
+
+Once a listing batch is finalized with photos, it runs through the exact same
+`photo_curate.select_representative_photos()` + `post_content.render_creatives()`
++ `post_content.build_captions()` calls as the mudah pipeline - same curation,
+same clean-overlay style, same caption rules. Output lands in
+`telegram_input/<chat_id>_<timestamp>/` (photos, curated creatives, captions,
+raw parsed listing JSON with the agent field already stripped) - same shape
+as the mudah pipeline's `posts_input/`.
+
+State (the `getUpdates` offset + any still-buffering batches) persists on a
+`data/telegram-bot-state` branch, same pattern as the scraper's data branch.
 
 ## Review & approval — Airtable (the review surface)
 After filtering and building creatives + captions, the skill creates one Airtable

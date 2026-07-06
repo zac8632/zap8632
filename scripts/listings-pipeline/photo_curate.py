@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Photo curation for the penang-listing-posts pipeline.
+Photo curation for the listing-content-studio pipeline.
 
 Jobs, all operating on REAL photos only (organizing/restoring what exists,
 never inventing content - stays within the no-hallucination rule):

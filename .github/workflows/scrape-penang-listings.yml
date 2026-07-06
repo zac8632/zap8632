@@ -42,20 +42,20 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           pip install -r requirements.txt
           playwright install --with-deps chromium
 
       - name: Debug detail page (log output only)
         if: ${{ github.event.inputs.debug_url != '' }}
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           python debug_detail_page.py "${{ github.event.inputs.debug_url }}"
 
       - name: Run scraper
         if: ${{ github.event.inputs.debug_url == '' }}
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           OWNER_FLAG=""
           if [ "${{ github.event.inputs.owner_only }}" = "true" ]; then OWNER_FLAG="--owner-only"; fi
@@ -69,12 +69,12 @@ jobs:
         if: ${{ github.event.inputs.debug_url == '' }}
         with:
           name: penang-listings
-          path: scripts/mudah-penang-scraper/penang_listings.xlsx
+          path: scripts/listings-pipeline/penang_listings.xlsx
           retention-days: 14
 
       - name: Commit results to data branch
         if: ${{ github.event.inputs.debug_url == '' }}
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           cp penang_listings.xlsx /tmp/penang_listings.xlsx
           git config user.name "github-actions[bot]"
@@ -97,7 +97,7 @@ jobs:
       # output, which the caller reads directly and discards.
       - name: Fetch seller contacts (log output only, not persisted)
         if: ${{ github.event.inputs.fetch_contacts == 'true' && github.event.inputs.debug_url == '' }}
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           python fetch_contacts.py \
             --input penang_listings.xlsx \

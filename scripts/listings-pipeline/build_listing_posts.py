@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Stage 1 of the social-content pipeline (see .claude/skills/penang-listing-posts/).
+Stage 1 of the social-content pipeline (see .claude/skills/listing-content-studio/).
 
 Takes the daily scrape output (penang_owners.xlsx), filters it to the
 high-value residential listings in the target areas, and for each qualifying
 listing downloads its real photos from the mudah.my detail page. Output is a
-per-listing folder the `penang-listing-posts` skill then turns into creatives +
+per-listing folder the `listing-content-studio` skill then turns into creatives +
 captions.
 
 Runs inside the GitHub Action (which can reach mudah.my). Two modes:
@@ -15,7 +15,7 @@ Runs inside the GitHub Action (which can reach mudah.my). Two modes:
                           its photos into --out.
 
 The qualifying rules and areas mirror
-.claude/skills/penang-listing-posts/context.md - keep them in sync.
+.claude/skills/listing-content-studio/context.md - keep them in sync.
 
 Usage:
     python build_listing_posts.py --input penang_owners.xlsx --out posts_input --new-only

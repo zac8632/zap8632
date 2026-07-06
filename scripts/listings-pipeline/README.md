@@ -8,7 +8,7 @@ days each listing has been up.
 ## Setup
 
 ```bash
-cd scripts/mudah-penang-scraper
+cd scripts/listings-pipeline
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt

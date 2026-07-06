@@ -31,29 +31,29 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           pip install curl_cffi pandas openpyxl pillow numpy
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install transformers
 
       - name: Restore latest scrape from data branch
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           git fetch origin data/penang-owners-scrape
-          git show origin/data/penang-owners-scrape:scripts/mudah-penang-scraper/penang_owners.xlsx \
+          git show origin/data/penang-owners-scrape:scripts/listings-pipeline/penang_owners.xlsx \
             > penang_owners.xlsx
 
       - name: Restore posted registry (dedup)
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           mkdir -p posts_input
           git fetch origin data/listing-posts || true
-          git show origin/data/listing-posts:scripts/mudah-penang-scraper/posts_input/posted_registry.json \
+          git show origin/data/listing-posts:scripts/listings-pipeline/posts_input/posted_registry.json \
             > posts_input/posted_registry.json 2>/dev/null || echo "{}" > posts_input/posted_registry.json
 
       - name: Filter + download listing photos
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         env:
           LIMIT: ${{ github.event.inputs.limit || '3' }}
           NEW_ONLY: ${{ github.event.inputs.new_only || 'false' }}
@@ -71,5 +71,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: listing-posts-input
-          path: scripts/mudah-penang-scraper/posts_input
+          path: scripts/listings-pipeline/posts_input
           retention-days: 14

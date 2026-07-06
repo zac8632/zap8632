@@ -1,5 +1,5 @@
 ---
-name: penang-listing-posts
+name: listing-content-studio
 description: >
   Turn the daily Penang owner-listing scrape into approval-ready social media
   carousel posts. Filters the scrape to high-value residential listings in the
@@ -11,9 +11,16 @@ description: >
 
 # Penang Listing Posts — content automation skill
 
-This skill takes the output of the `scrape_penang_owners.py` pipeline and
-produces **approval-ready social posts**. A human always reviews in Airtable
-before anything is scheduled — this skill never posts to social media directly.
+This skill takes listings from either of TWO sources and produces
+**approval-ready social posts**. A human always reviews in Airtable before
+anything is scheduled — this skill never posts to social media directly.
+
+- **mudah scrape** (`build_listing_posts.py`) — daily-scraped owner listings.
+- **Telegram bot** (`telegram_listings.py`) — colleague-forwarded WhatsApp
+  listings, no watermark (see `context.md` → "Second source — Telegram bot").
+
+Both converge on the same procedure below (steps 2 onward: curate → render →
+caption → Airtable).
 
 ## Companion files (read these first, every run)
 
@@ -31,7 +38,7 @@ before anything is scheduled — this skill never posts to social media directly
 ## Inputs
 
 1. The latest scrape output. Prefer the committed copy on the data branch:
-   `git show origin/data/penang-owners-scrape:scripts/mudah-penang-scraper/penang_owners.xlsx`
+   `git show origin/data/penang-owners-scrape:scripts/listings-pipeline/penang_owners.xlsx`
    (or a path the user gives you). Read with `dtype=str` so phone/price columns
    keep their exact form.
 2. Optional: a date or "today only" filter — default to listings where
