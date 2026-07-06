@@ -131,14 +131,20 @@ def select_representative_photos(photo_paths, k=5):
 
     chosen, used = [], set()
 
-    def take_best(cat):
+    def take_best(cat, require_quality_ok=True):
         for p, s, conf in by_category.get(cat, []):
-            if p not in used:
-                used.add(p)
-                return {"path": p, "category": cat, "sharpness": s["sharpness"],
-                        "min_side": s["min_side"], "confidence": conf}
+            if p in used:
+                continue
+            if require_quality_ok and not s["quality_ok"]:
+                continue
+            used.add(p)
+            return {"path": p, "category": cat, "sharpness": s["sharpness"],
+                    "min_side": s["min_side"], "confidence": conf}
         return None
 
+    # Quality-gated: only ever take a photo that actually clears the bar. If a
+    # listing only has one genuinely good photo, ship one - never pad the set
+    # with a blurry/low-res photo just to hit a target count.
     for cat in CORE_CATEGORIES:
         picked = take_best(cat)
         if picked:
@@ -153,7 +159,7 @@ def select_representative_photos(photo_paths, k=5):
                 chosen.append(picked)
 
     if len(chosen) < k:
-        rest = [(p, s) for p, s in scored.items() if p not in used]
+        rest = [(p, s) for p, s in scored.items() if p not in used and s["quality_ok"]]
         rest.sort(key=lambda t: t[1]["sharpness"] * t[1]["min_side"], reverse=True)
         for p, s in rest:
             if len(chosen) >= k:
@@ -162,6 +168,14 @@ def select_representative_photos(photo_paths, k=5):
                            "sharpness": s["sharpness"], "min_side": s["min_side"],
                            "confidence": 0.0})
             used.add(p)
+
+    # Last resort only: if literally nothing cleared the quality bar, ship the
+    # single best available rather than posting nothing.
+    if not chosen and scored:
+        best_p = max(scored, key=lambda p: scored[p]["sharpness"] * scored[p]["min_side"])
+        s = scored[best_p]
+        chosen.append({"path": best_p, "category": "uncategorised",
+                       "sharpness": s["sharpness"], "min_side": s["min_side"], "confidence": 0.0})
 
     def sort_key(c):
         if c["category"] == "exterior/facade":
