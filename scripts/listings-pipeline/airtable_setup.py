@@ -62,7 +62,7 @@ MY_PIPELINE_FIELDS_TEMPLATE = [
     ]}},
     {"name": "Remarks", "type": "multilineText"},
     {"name": "Next Contact Date", "type": "date",
-     "options": {"dateFormat": {"name": "local", "format": "M/D/YYYY"}}},
+     "options": {"dateFormat": {"name": "us"}}},
 ]
 
 
