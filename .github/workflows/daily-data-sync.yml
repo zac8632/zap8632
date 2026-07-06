@@ -28,22 +28,22 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: pip install -r requirements.txt
 
       - name: Restore seen-listings registry from data branch
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           git fetch origin data/penang-owners-scrape || true
           git show origin/data/penang-owners-scrape:penang_seen_listings.json \
             > penang_seen_listings.json 2>/dev/null || echo "{}" > penang_seen_listings.json
 
       - name: Write Google service-account key from secret
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: echo '${{ secrets.GSHEET_SERVICE_ACCOUNT_JSON }}' > gsheet_key.json
 
       - name: Run scraper
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         env:
           PAGES: ${{ github.event.inputs.pages || '200' }}
           STATEWIDE: ${{ github.event.inputs.statewide || 'true' }}
@@ -61,17 +61,17 @@ jobs:
             --gsheet-key gsheet_key.json
 
       - name: Remove service-account key before committing
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: rm -f gsheet_key.json
 
       - uses: actions/upload-artifact@v4
         with:
           name: penang-owners-listings
-          path: scripts/mudah-penang-scraper/penang_owners.xlsx
+          path: scripts/listings-pipeline/penang_owners.xlsx
           retention-days: 14
 
       - name: Commit results to data branch
-        working-directory: scripts/mudah-penang-scraper
+        working-directory: scripts/listings-pipeline
         run: |
           cp penang_owners.xlsx /tmp/penang_owners.xlsx
           cp penang_seen_listings.json /tmp/penang_seen_listings.json
