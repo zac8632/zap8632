@@ -95,7 +95,7 @@ jobs:
             git checkout -B data/subsales-registry FETCH_HEAD
           else
             git checkout --orphan data/subsales-registry
-            git rm -rf . > /dev/null 2>&1 || true
+            git read-tree --empty
           fi
           cp /tmp/subsales_registry.json subsales_registry.json
           git add -f subsales_registry.json
