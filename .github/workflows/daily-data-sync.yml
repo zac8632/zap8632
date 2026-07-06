@@ -82,7 +82,7 @@ jobs:
             git checkout -B data/penang-owners-scrape FETCH_HEAD
           else
             git checkout --orphan data/penang-owners-scrape
-            git rm -rf . > /dev/null 2>&1 || true
+            git read-tree --empty
           fi
           cp /tmp/penang_owners.xlsx penang_owners.xlsx
           cp /tmp/penang_seen_listings.json penang_seen_listings.json

@@ -136,7 +136,7 @@ jobs:
             git checkout -B data/telegram-bot-state FETCH_HEAD
           else
             git checkout --orphan data/telegram-bot-state
-            git rm -rf . > /dev/null 2>&1 || true
+            git read-tree --empty
           fi
           mkdir -p telegram_input
           cp /tmp/telegram_state.json telegram_input/telegram_state.json
