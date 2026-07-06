@@ -574,12 +574,17 @@ def main():
         # the album and copy-paste whichever caption you're posting to.
         chat_id = listing["_chat_id"]
         feed_creatives = creatives.get("4x5", [])
+        story_creatives = creatives.get("9x16", [])
         if feed_creatives:
             tg_send_media_group(
                 token, chat_id, feed_creatives,
                 caption=f"'{listing.get('Title') or listing['_batch_id']}' - "
-                        f"{len(feed_creatives)} ready-to-post creative(s)")
-        else:
+                        f"{len(feed_creatives)} feed creative(s) (4:5, IG/Threads/TikTok)")
+        if story_creatives:
+            tg_send_media_group(
+                token, chat_id, story_creatives,
+                caption=f"{len(story_creatives)} vertical creative(s) (9:16, Story/Reels/TikTok)")
+        if not feed_creatives and not story_creatives:
             tg_send_message(token, chat_id, "No creatives were rendered (no usable photos).")
         for plat, txt in caps.items():
             tg_send_message(token, chat_id, f"[{plat.upper()} CAPTION]\n\n{txt}")
