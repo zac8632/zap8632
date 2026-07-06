@@ -36,7 +36,7 @@ TELEGRAM_API = "https://api.telegram.org/bot{token}/{method}"
 # Chat IDs allowed to submit listings via the bot. Empty = reject everyone.
 # Find your chat_id by messaging @userinfobot on Telegram, or from this
 # script's own log output the first time an unrecognised chat_id messages it.
-ALLOWED_CHAT_IDS = set()  # e.g. {123456789}
+ALLOWED_CHAT_IDS = {312587269}
 
 # How long to wait after the last message in a chat before treating the
 # batch as "complete" and processing it - colleague may send photos then
