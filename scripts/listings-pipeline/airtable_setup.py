@@ -103,7 +103,7 @@ def main():
     ap.add_argument("--base-id", required=True)
     args = ap.parse_args()
 
-    token = os.environ.get("AIRTABLE_API_KEY")
+    token = (os.environ.get("AIRTABLE_API_KEY") or "").strip()
     if not token:
         print("AIRTABLE_API_KEY env var not set", file=sys.stderr)
         sys.exit(1)

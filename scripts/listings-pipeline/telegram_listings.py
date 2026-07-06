@@ -514,7 +514,7 @@ def main():
                           "(useful for manual testing).")
     args = ap.parse_args()
 
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
+    token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
     if not token:
         print("TELEGRAM_BOT_TOKEN not set.", file=sys.stderr)
         sys.exit(1)
