@@ -168,6 +168,11 @@ if __name__ == "__main__":
     ap.add_argument("--out", default="watermark_template.npz")
     ap.add_argument("--self-test", action="store_true",
                      help="Run the synthetic proof only, no real photos needed")
+    ap.add_argument("--std-percentile", type=float, default=25,
+                     help="Higher = wider mask (more of the frame counted as watermark). "
+                          "Bumped from the original 15 - the user confirmed the real mudah "
+                          "watermark sits centered and spans much of the frame, wider than "
+                          "the first real test's mask captured.")
     args = ap.parse_args()
 
     if args.self_test or not args.photos_dir:
@@ -181,7 +186,7 @@ if __name__ == "__main__":
         + glob.glob(os.path.join(args.photos_dir, "**", "*.png"), recursive=True)
     )
     print(f"Calibrating from {len(paths)} photos...")
-    mask, color = build_template(paths)
+    mask, color = build_template(paths, std_percentile=args.std_percentile)
     save_template(mask, color, args.out)
     coverage = mask.mean()
     print(f"Saved {args.out} - watermark mask covers {coverage:.1%} of frame.")
