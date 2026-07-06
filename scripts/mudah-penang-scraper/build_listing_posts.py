@@ -313,7 +313,7 @@ def fetch_and_download(session, row, out_dir, debug=False):
         dewatermarked_paths = []
         for p in curated_paths:
             out_p = os.path.join(dewm_dir, os.path.basename(p))
-            if photo_curate.remove_watermark(p, out_p):
+            if photo_curate.inpaint_watermark(p, out_p):
                 dewatermarked_paths.append(out_p)
             else:
                 dewatermarked_paths.append(p)

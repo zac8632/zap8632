@@ -225,12 +225,10 @@ def _box_blur_1d(arr, radius, axis):
 
 def remove_watermark(path, out_path=None, box=WATERMARK_BOX,
                       alpha=WATERMARK_ALPHA, watermark_rgb=WATERMARK_RGB):
-    """Un-blend mudah's translucent watermark within its typical region:
-    visible = alpha*W + (1-alpha)*real  =>  real ~= (visible - alpha*W) / (1-alpha).
-    This recovers real pixels rather than generating new content (Tier 2, not
-    Tier 3) - accuracy depends on how close alpha/watermark_rgb are to the
-    platform's actual overlay; mask edges are feathered so there's no seam.
-    Returns True if applied."""
+    """FALLBACK ONLY - superseded by inpaint_watermark() below. Un-blends a
+    single fixed-box translucent overlay; doesn't handle mudah's actual
+    repeating diagonal tiled watermark, which covers the whole frame. Kept for
+    the case where the LaMa inpainting dependency isn't installed."""
     try:
         img = Image.open(path).convert("RGB")
     except Exception:
@@ -242,4 +240,82 @@ def remove_watermark(path, out_path=None, box=WATERMARK_BOX,
     restored = np.clip((arr - alpha * W) / (1 - alpha), 0, 255)
     out_arr = arr * (1 - mask) + restored * mask
     Image.fromarray(out_arr.astype(np.uint8), "RGB").save(out_path or path, quality=95)
+    return True
+
+
+# ---- Whole-image tiled-watermark removal (detect + LaMa inpaint) ----------
+#
+# mudah's watermark is a repeating diagonal tiled overlay across the ENTIRE
+# frame, not one fixed spot - the box/alpha de-blend above only ever touched
+# one region. This detects the (semi-transparent, low-saturation, locally-
+# brighter-than-surroundings) overlay pixels across the whole photo and
+# inpaints just those with LaMa - Tier 2: restoring the real photo behind a
+# platform-injected overlay, not generating new scene content. A dilated,
+# thin mask (not a solid block) keeps inpainting minimally destructive.
+
+_lama_cache = {}
+
+
+def detect_watermark_mask(img_rgb, brightness_thresh=10.0, sat_thresh=0.18, blur_radius=15):
+    """Heuristic mask: pixels noticeably brighter than their local surroundings
+    (a blurred version of the image) AND low-saturation (grayish/white) - the
+    signature of a light semi-transparent overlay. Returns a uint8 0/255 mask,
+    same H×W as img_rgb. This is a heuristic, not exact detection - expect to
+    tune the thresholds against real output."""
+    from PIL import ImageFilter
+
+    img = Image.fromarray(img_rgb, "RGB")
+    gray = np.asarray(img.convert("L"), dtype=np.float64)
+    blurred = np.asarray(img.convert("L").filter(ImageFilter.GaussianBlur(blur_radius)),
+                          dtype=np.float64)
+    residual = gray - blurred
+
+    r = img_rgb[:, :, 0].astype(np.float64)
+    g = img_rgb[:, :, 1].astype(np.float64)
+    b = img_rgb[:, :, 2].astype(np.float64)
+    maxc = np.maximum(np.maximum(r, g), b)
+    minc = np.minimum(np.minimum(r, g), b)
+    sat = np.where(maxc > 0, (maxc - minc) / np.maximum(maxc, 1.0), 0.0)
+
+    mask = (residual > brightness_thresh) & (sat < sat_thresh)
+    mask_img = Image.fromarray((mask * 255).astype(np.uint8), "L")
+    # dilate slightly so thin watermark strokes are fully covered, then a touch
+    # of blur so the inpainted patch blends without a hard-edged seam
+    mask_img = mask_img.filter(ImageFilter.MaxFilter(5))
+    mask_img = mask_img.filter(ImageFilter.GaussianBlur(2))
+    return np.asarray(mask_img)
+
+
+def inpaint_watermark(path, out_path=None):
+    """Detect + inpaint mudah's tiled watermark across the whole photo using
+    LaMa (via simple-lama-inpainting). Falls back to remove_watermark() (the
+    single-box de-blend) if the dependency isn't installed. Returns True if
+    any processing was applied."""
+    try:
+        img = Image.open(path).convert("RGB")
+    except Exception:
+        return False
+
+    try:
+        from simple_lama_inpainting import SimpleLama
+    except ImportError:
+        print("  [curate] simple-lama-inpainting not installed - falling back "
+              "to box de-blend", file=sys.stderr)
+        return remove_watermark(path, out_path)
+
+    if "lama" not in _lama_cache:
+        _lama_cache["lama"] = SimpleLama()
+    lama = _lama_cache["lama"]
+
+    img_rgb = np.asarray(img)
+    mask_arr = detect_watermark_mask(img_rgb)
+    if mask_arr.max() == 0:
+        # nothing detected - save through unchanged rather than skip, so the
+        # rest of the pipeline always finds a file at out_path
+        img.save(out_path or path, quality=95)
+        return True
+
+    mask_img = Image.fromarray(mask_arr, "L")
+    result = lama(img, mask_img)
+    result.save(out_path or path, quality=95)
     return True
