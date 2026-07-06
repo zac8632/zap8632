@@ -68,9 +68,17 @@ def build_template(photo_paths, size=CANONICAL_SIZE, std_percentile=15):
     constant across the stack (candidate watermark), vs. pixels that vary a
     lot (real scene content, safe to leave alone).
 
-    Returns (mask, color): mask is a (H, W) bool array of watermark-affected
-    pixels, color is the (H, W, 3) per-pixel median - the calibrated estimate
-    of what the watermark looks like on top of "average" content there.
+    Returns (mask, color, confidence):
+    - mask: (H, W) bool array of watermark-affected pixels.
+    - color: (H, W, 3) per-pixel median - the calibrated estimate of what
+      the watermark looks like on top of "average" content there.
+    - confidence: (H, W) float in [0, 1], zero outside the mask and rising
+      toward 1 the lower a pixel's cross-stack std is relative to the mask
+      threshold. Pixels dead-center of the logo/text (near-zero variance
+      across totally different photos) get high confidence; pixels near the
+      mask's ragged edge (borderline variance) get low confidence. Used to
+      taper the blend at the edges instead of a hard on/off cut, which is
+      what makes a flat patch visible as a patch.
     """
     if len(photo_paths) < 8:
         raise ValueError(
@@ -84,38 +92,70 @@ def build_template(photo_paths, size=CANONICAL_SIZE, std_percentile=15):
 
     threshold = np.percentile(std, std_percentile)
     mask = std <= threshold
-    return mask, med
+    confidence = np.clip(1.0 - std / (threshold + 1e-6), 0.0, 1.0)
+    confidence = np.where(mask, confidence, 0.0)
+    return mask, med, confidence
 
 
-def save_template(mask, color, out_path):
-    np.savez_compressed(out_path, mask=mask, color=color)
+def save_template(mask, color, confidence, out_path):
+    np.savez_compressed(out_path, mask=mask, color=color, confidence=confidence)
 
 
 def load_template(path):
     data = np.load(path)
-    return data["mask"], data["color"]
+    return data["mask"], data["color"], data["confidence"]
 
 
-def suppress_watermark(img_path, mask, color, strength=0.6, out_path=None):
-    """Soften (not perfectly remove) the calibrated watermark region: blend
-    each masked pixel toward its local neighbourhood average, proportional to
-    `strength`. Never touches pixels outside the calibrated mask, so it can't
-    repeat the old failure mode of eating real sky/mirror/wall content."""
+def suppress_watermark(img_path, mask, color, confidence, strength=0.6,
+                        out_path=None, target_mode="local", feather_sigma=15):
+    """Soften (not perfectly remove) the calibrated watermark region.
+
+    Two things changed from the original hard-mask/local-blur-only version,
+    both aimed at the "still see the word mudah" feedback on real photos:
+
+    1. `target_mode` picks what the masked pixels get blended toward:
+       - "local": the old behaviour - a box-blur of THIS photo's own
+         neighbourhood. Matches local lighting/color perfectly but a live
+         blur still carries some bleed-through from the sharp logo/text
+         edges it's blurring, so faint lettering can survive.
+       - "calibrated": blend toward `color`, the per-pixel median computed
+         across many real photos during calibration. This is a cleaner
+         "what's actually here without the stamp" estimate since it's
+         built from genuine content elsewhere, not a blur of the same
+         contaminated pixels - but it can mismatch this specific photo's
+         lighting/color cast since it's a fixed value.
+       - "hybrid": average of the two, trading off both risks.
+    2. The blend strength is no longer uniform across the whole mask -
+       it's scaled per-pixel by `confidence` (how sure calibration was that
+       this exact pixel is watermark, not content) and that confidence map
+       is Gaussian-feathered so the transition softens gradually at the
+       mask's ragged edge instead of stopping dead. That's what keeps the
+       blended region reading as part of the photo rather than a pasted
+       patch - a hard binary mask is what made past attempts look like an
+       obvious rectangle/blob even when the color matched.
+    """
     img = Image.open(img_path).convert("RGB")
     orig_size = img.size
     small = img.resize((mask.shape[1], mask.shape[0]), Image.LANCZOS)
     arr = np.asarray(small, dtype=np.float64)
 
-    # Local neighbourhood average via a cheap box blur, used as the "what
-    # would this area look like without a stamped overlay" target.
-    from scipy.ndimage import uniform_filter  # optional dep; see requirements
+    from scipy.ndimage import gaussian_filter, uniform_filter  # optional dep; see requirements
+
     local_avg = np.stack(
         [uniform_filter(arr[..., c], size=41) for c in range(3)], axis=-1
     )
+    if target_mode == "local":
+        target = local_avg
+    elif target_mode == "calibrated":
+        target = color
+    elif target_mode == "hybrid":
+        target = 0.5 * local_avg + 0.5 * color
+    else:
+        raise ValueError(f"unknown target_mode: {target_mode!r}")
 
-    out = arr.copy()
-    m = mask[..., None]
-    out = np.where(m, arr * (1 - strength) + local_avg * strength, arr)
+    soft_mask = gaussian_filter(confidence, sigma=feather_sigma)
+    blend = (strength * soft_mask)[..., None]
+    out = arr * (1 - blend) + target * blend
     result = Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).resize(
         orig_size, Image.LANCZOS
     )
@@ -186,8 +226,8 @@ if __name__ == "__main__":
         + glob.glob(os.path.join(args.photos_dir, "**", "*.png"), recursive=True)
     )
     print(f"Calibrating from {len(paths)} photos...")
-    mask, color = build_template(paths, std_percentile=args.std_percentile)
-    save_template(mask, color, args.out)
+    mask, color, confidence = build_template(paths, std_percentile=args.std_percentile)
+    save_template(mask, color, confidence, args.out)
     coverage = mask.mean()
     print(f"Saved {args.out} - watermark mask covers {coverage:.1%} of frame.")
     if coverage > 0.35:
