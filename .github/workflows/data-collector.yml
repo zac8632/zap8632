@@ -1,4 +1,4 @@
-name: Scrape Penang Listings
+name: Data Collector
 
 on:
   workflow_dispatch:

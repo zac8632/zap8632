@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 One-time schema setup for the "Lead Pipeline" Airtable base (run via
-setup-airtable-schema.yml, not locally - this sandbox has no network access
+setup-crm-schema.yml, not locally - this sandbox has no network access
 to Airtable's API).
 
 Creates two tables:

@@ -1,4 +1,4 @@
-name: Set Up Airtable Schema (one-time)
+name: Set Up CRM Schema (one-time)
 
 # Creates the "Master Listings" and "My Pipeline" tables/fields in the Lead
 # Pipeline Airtable base. Safe to re-run - skips any table that already

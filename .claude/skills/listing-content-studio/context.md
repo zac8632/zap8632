@@ -111,7 +111,7 @@ Notes:
   https://docs.google.com/spreadsheets/d/1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI/edit
 
 ## Second source — Telegram bot (personal listings, non-mudah)
-`telegram_listings.py` + `.github/workflows/telegram-listing-bot.yml`. The
+`telegram_listings.py` + `.github/workflows/inbox-bot.yml`. The
 user personally forwards a WhatsApp listing (free-text description + photos,
 often from other agents) into a Telegram chat with our bot. Personal-use
 only, one whitelisted chat_id - not a shared/multi-colleague tool. The

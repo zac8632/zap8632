@@ -1,4 +1,4 @@
-name: Build Listing Posts (Stage 1 test)
+name: Content Draft Builder (Stage 1 test)
 
 # Manual test harness for the social-content Stage 1 engine: filter the latest
 # scrape to qualifying listings and download each one's real photos from mudah.

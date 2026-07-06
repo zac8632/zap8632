@@ -1,4 +1,4 @@
-name: Telegram Listing Bot
+name: Inbox Bot
 
 # Polls a Telegram bot for personally-submitted listings (WhatsApp text +
 # photos forwarded into Telegram), extracts what it can from the free text,

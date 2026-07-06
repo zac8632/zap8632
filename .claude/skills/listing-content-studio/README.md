@@ -76,7 +76,7 @@ Telegram bot ──▶ parse free text (price/beds/baths/area/...)  ──┘   
    validated against real data and a real Action run.
 2. **Telegram bot ingestion** — built (`telegram_listings.py` + workflow);
    needs a bot token + colleague chat_id whitelist to actually test end-to-end
-   (see setup notes in `telegram-listing-bot.yml`).
+   (see setup notes in `inbox-bot.yml`).
 3. **Registry write-back** (dedup across days for mudah source) — not yet wired.
 4. **Video** (Stage 3, see `video-stage.md`) — spec only, code not started.
 5. **Airtable** records for review (needs a token + base ID) — not started.

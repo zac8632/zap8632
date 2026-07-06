@@ -1,4 +1,4 @@
-name: Daily Penang Owner Scrape
+name: Daily Data Sync
 
 on:
   schedule:
