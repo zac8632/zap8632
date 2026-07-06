@@ -25,7 +25,7 @@ scheduling. Anything unchecked = fix or reject.
 - [ ] Both 4:5 and 9:16 covers present.
 - [ ] Cover is legible on a phone; bright/clean; palette on-brand.
 - [ ] Carousel order: cover → real photos → CTA slide; ≤10 slides.
-- [ ] Captions read well per platform; hashtags match the listing/area.
+- [ ] Captions read well per platform (no hashtags, no contact/links).
 
 ## Decision
 - Approve → mark approved (later: set Airtable `Status = Approved`).

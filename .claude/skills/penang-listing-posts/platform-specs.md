@@ -6,11 +6,11 @@ captions follow these limits. (See `caption-playbook.md` for tone/structure and
 
 | Platform            | Creative used | Aspect | Pixels     | Slides / frames        | Caption guidance |
 |---------------------|---------------|--------|------------|------------------------|------------------|
-| Instagram feed      | Cover 4:5     | 4:5    | 1080×1350  | Carousel, up to **10** | ~2,200 char max; front-load first ~125; 8–15 hashtags |
-| Instagram Story     | Cover 9:16    | 9:16   | 1080×1920  | 1+ story frames        | Minimal on-image text; soft CTA sticker; no hashtags needed |
-| TikTok (photo mode) | Cover 9:16    | 9:16   | 1080×1920  | Up to ~35 (keep ≤10)   | Short, punchy; 3–6 hashtags; video preferred over photos |
-| Threads             | Cover 4:5     | 4:5    | 1080×1350  | Up to 10 images        | ~500 char; conversational; ≤1 hashtag |
-| WhatsApp status     | Cover 9:16    | 9:16   | 1080×1920  | 1 per status (24h)     | Ultra-short; no hashtags |
+| Instagram feed      | Cover 4:5     | 4:5    | 1080×1350  | Carousel, up to **10** | ~2,200 char max; front-load first ~125. No hashtags. |
+| Instagram Story     | Cover 9:16    | 9:16   | 1080×1920  | 1+ story frames        | Minimal on-image text; soft CTA sticker |
+| TikTok (photo mode) | Cover 9:16    | 9:16   | 1080×1920  | Up to ~35 (keep ≤10)   | Short, punchy; video preferred over photos |
+| Threads             | Cover 4:5     | 4:5    | 1080×1350  | Up to 10 images        | ~500 char; conversational |
+| WhatsApp status     | Cover 9:16    | 9:16   | 1080×1920  | 1 per status (24h)     | Ultra-short |
 
 ## Safe zones (9:16 — Story / TikTok / WhatsApp)
 - Keep all text/logos clear of the **top ~250 px** and **bottom ~320 px** — those

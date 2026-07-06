@@ -3,8 +3,8 @@
 Same facts everywhere (all traceable to the listing per `rules-and-constraints.md`),
 but format, length, and tone are tuned per platform.
 
-**No contact details, links, or @handles in any caption** — soft CTA only
-(protects privacy AND avoids shadowbans; feeds penalise off-platform pushes).
+**No hashtags. No contact details, links, or @handles in any caption** — soft CTA
+only (protects privacy AND avoids shadowbans; feeds penalise off-platform pushes).
 
 ## Shared building blocks (assemble from scraped data only)
 - **Hook** — one line, benefit or standout fact from the owner's text.
@@ -18,20 +18,16 @@ but format, length, and tone are tuned per platform.
 ## Instagram (feed carousel)
 - Length: ~125 chars visible before "more" — front-load the hook + area + price.
 - Structure: Hook → short facts → price → CTA → 1 line of value.
-- Hashtags: 8–15, mix of local + niche (e.g. #PenangProperty #TanjungTokong
-  #SeriTanjungPinang #PenangRealEstate #PropertyForSale). Put them at the end or
-  first comment.
 - Emoji: sparing, tasteful (📍 🛏️ 📐 💬).
 
 ## TikTok (carousel / photo post)
 - Shorter, punchier, trend-aware voice. Hook in first 2–3 words.
-- 1–2 short lines + price + CTA. 3–6 hashtags max (#PenangProperty #fyp +
-  location). Caption is secondary to the visuals here.
+- 1–2 short lines + price + CTA. Caption is secondary to the visuals here.
 
 ## Threads
 - Conversational, lower-gloss than IG. 1–3 short sentences.
 - Lead with an observation or the standout feature, then price + CTA.
-- Minimal/no hashtags (1 max). No emoji spam.
+- No emoji spam.
 
 ## Instagram Story
 - Uses the 9:16 creative. Minimal on-image text (headline + price already on the
@@ -42,13 +38,12 @@ but format, length, and tone are tuned per platform.
 
 ## WhatsApp status
 - Ultra-short, single glance. Area + price + one feature + "DM to view".
-- No hashtags. This pairs with the 9:16 creative.
 
 ## Tone & honesty
 - Aspirational but accurate. Describe what's real.
 - Never state a spec/amenity the owner didn't mention.
 - Convert currency with "≈" and "approx." only.
-- Keep the same core facts consistent across all four platforms.
+- Keep the same core facts consistent across all platforms.
 
 ## Example skeleton (fill only with real data)
 ```
@@ -56,7 +51,6 @@ but format, length, and tone are tuned per platform.
 📍 {Area} · {Beds}🛏 {Baths}🛁 · {Size} sqft · {Tenure}
 💰 RM {price}  (≈ USD {usd}k / SGD {sgd}k approx.)
 💬 {soft CTA — e.g. DM to arrange a viewing}
-{hashtags}
 ```
 Any `{field}` that is blank is dropped from the line — never shown empty.
-No number, link, or @handle anywhere in the caption.
+No number, link, @handle, or hashtag anywhere in the caption.

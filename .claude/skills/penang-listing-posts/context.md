@@ -92,14 +92,23 @@ Notes:
 - Google Sheet (live mirror):
   https://docs.google.com/spreadsheets/d/1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI/edit
 
-## Airtable  — LAST STAGE (deferred)
-Do not build this until the creative + caption output has been demoed and
-approved. Near-term, the skill writes drafts to a local review folder
-(`social-automation-output/<date>/<listId>/`) with the creatives, chosen photos,
-and a `captions.md` per listing, so you can eyeball results before we wire any
-external service.
+## Review & approval — Airtable (the review surface)
+After filtering and building creatives + captions, the skill creates one Airtable
+record per listing with `Status = Pending Review`. **Airtable is the single place
+the user reviews and approves** — approve/reject there; Publer (last stage) reads
+approved rows. A local copy under `social-automation-output/` is kept as backup.
 
-When we do build it — proposed base: **"Penang Listing Posts"**, table **"Posts"**.
+Attachments: the repo is public, so creatives + photos are committed to the data
+branch and attached to Airtable via their **raw.githubusercontent.com** URLs
+(Airtable ingests attachments from public URLs). No file uploads needed.
+
+Needed from the user (one-time):
+- An Airtable **Personal Access Token** (scopes: `data.records:read/write`,
+  `schema.bases:read`) + the **base ID**. Then the skill creates/fills the
+  "Posts" table per the schema below. (I can create the base structure via the
+  API once a token is shared, or the user creates it from the schema.)
+
+Base: **"Penang Listing Posts"**, table **"Posts"**.
 Suggested fields:
 - `Listing ID` (single line) — mudah listId
 - `Title` (single line)

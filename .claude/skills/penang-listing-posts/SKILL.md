@@ -25,6 +25,8 @@ before anything is scheduled — this skill never posts to social media directly
 - **`style-guide.md`** — the visual system for the cover creatives (derived
   from the user's reference samples).
 - **`caption-playbook.md`** — per-platform caption structure and CTA rules.
+- **`platform-specs.md`** — exact sizes, slide caps, caption limits, safe zones.
+- **`review-checklist.md`** — the approval checklist (used when reviewing in Airtable).
 
 ## Inputs
 
@@ -88,16 +90,18 @@ regenerate — nothing with contact info or a link may reach the output folder.
 Also re-verify each stat chip has a real source value and the price matches the
 scrape exactly. Record the check result in the run report.
 
-### 7. Write to the local review folder (near-term output)
-Airtable + Publer are LAST-STAGE (deferred). For now, write each listing to
-`social-automation-output/<date>/<listId>/` containing: cover creatives (4:5 +
-9:16), the chosen carousel photos, and a `captions.md` with all four platform
-captions and an `ai_enhanced` note. This lets the user review before we wire any
-external service.
+### 7. Create Airtable records for review
+Commit the creatives + chosen photos to the data branch, then create one Airtable
+row per listing (`Status = Pending Review`) with: the listing facts, the
+per-platform captions, the creative + photo attachments (via public
+raw.githubusercontent.com URLs), and the `ai_enhanced` flag. **Airtable is the
+user's review/approval surface** — see `context.md` → "Review & approval —
+Airtable". Also keep a local copy under `social-automation-output/<date>/<listId>/`
+as backup. (Publer scheduling is the last stage and only reads approved rows.)
 
 ### 8. Stop. Report to the user.
 Summarize: N qualifying, N posts drafted, any images enhanced (and which tier),
-any listings skipped and why, and the output folder path. Do NOT post anywhere.
+any listings skipped and why, and the Airtable link. Do NOT post anywhere.
 
 ## What this skill must never do
 - Post to any social platform directly (a human reviews first).

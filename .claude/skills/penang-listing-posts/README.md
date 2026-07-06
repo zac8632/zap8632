@@ -2,49 +2,44 @@
 
 Stage 2 of the Penang property project. Stage 1 (`scripts/mudah-penang-scraper/`)
 scrapes owner listings daily. This skill turns qualifying listings into
-approval-ready social carousel posts.
+approval-ready social carousel posts, then routes them to Airtable for review.
 
 ## Flow
 ```
 daily scrape  →  filter (≥RM1.2M, residential, target areas)
              →  pull real listing photos  →  light enhance if blurry
              →  branded cover creative (price + stats, MYR/USD/SGD)
-             →  per-platform captions + CTA
-             →  Airtable (Pending Review)  →  [human approves]
-             →  Publer scheduling  →  IG / Threads / TikTok / WhatsApp
+             →  per-platform captions (no hashtags, soft CTA)
+             →  Airtable (Pending Review)  →  [you approve here]
+             →  Publer scheduling  →  IG feed / IG Story / Threads / TikTok / WhatsApp
 ```
 
 ## Files
 - `SKILL.md` — the invokable skill (the procedure).
-- `rules-and-constraints.md` — hard rules (no hallucination, image integrity,
-  owner privacy, approval gate).
-- `context.md` — brand, CTA, areas, price threshold, currencies, Airtable
-  schema, Publer notes. **Has TODOs to fill in.**
+- `rules-and-constraints.md` — hard rules (no hallucination, 3-tier image policy,
+  no contact info, approval gate).
+- `context.md` — brand, CTA, areas, price threshold, currencies, cadence, dedup,
+  rendering approach, Airtable review surface, Publer notes.
 - `style-guide.md` — visual system for the creatives.
 - `caption-playbook.md` — per-platform caption rules.
+- `platform-specs.md` — exact sizes, slide caps, caption limits, safe zones.
+- `review-checklist.md` — the approval checklist (used when reviewing in Airtable).
 
-## Status: scaffolding done; executable build next
-Decisions locked: Coastal Luxe palette + Montserrat/Playfair fonts; no
-logo/name/handle/contact on any output (soft CTA only, shadowban-safe); branded
-carousel (cover → real photos → CTA); three-tier image policy; MYR + USD/SGD
-approx. Airtable + Publer are deferred to the LAST stage.
-
-## Decisions
-- **REN/agent tag**: NOT needed (confirmed) — creatives stay clean, no text/contact.
+## Decisions (locked)
+- **Brand**: Coastal Luxe palette + Montserrat/Playfair fonts; no logo/name/
+  handle/contact on any output; soft CTA only (shadowban-safe).
+- **No hashtags** anywhere.
+- **REN/agent tag**: not needed.
 - **Post volume**: no cap — every qualifying "Just Listed" listing gets a post.
 - **Platforms**: Instagram feed + Instagram Story, TikTok, Threads, WhatsApp status.
-- **Open**: image-fetch location — recommended = the daily GitHub Action downloads
-  qualifying listings' photos and commits them to the data branch (skill reads
-  local files, runs anywhere); alternative = run the skill on the Mac. Confirm.
+- **Image policy**: three-tier (enhance real photos only; never fabricate/stage).
+- **Image fetch**: runs in the GitHub Action (which can reach mudah).
+- **Review surface**: Airtable (Pending Review → you approve). Publer is last.
 
-## Extra guidance files
-- `platform-specs.md` — exact sizes, slide caps, caption limits, safe zones.
-- `hashtag-bank.md` — vetted Penang/area/luxury hashtag sets + usage rules.
-- `review-checklist.md` — the human approval checklist for the output folder.
-
-Build order:
-1. **Filter + image fetch** (no external deps — uses existing scrape data). Demo-able now.
-2. **Creative render** (Coastal Luxe cover, 4:5 + 9:16) + caption gen → local
-   review folder `social-automation-output/<date>/<listId>/`.
-3. Run a demo on 1–2 real listings; user reviews.
-4. LAST: Airtable base + Publer scheduling.
+## Build status / order
+1. **Filter** — DONE, validated on real data (21/250 qualify, correct).
+2. **Image fetch** — engine built (`build_listing_posts.py` + test workflow);
+   pending a confirmation run to verify mudah photo extraction.
+3. **Creative render** (Coastal Luxe cover, 4:5 + 9:16) + caption gen — next.
+4. **Airtable** records for review (needs a token + base ID).
+5. LAST: Publer scheduling of approved rows.
