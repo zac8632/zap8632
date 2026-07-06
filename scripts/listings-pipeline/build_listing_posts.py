@@ -191,6 +191,19 @@ def extract_image_urls(detail_html, list_id, debug_path=None):
                           f, indent=2, default=str)
         except Exception:
             pass
+        # Print the raw URL strings straight to the CI log too - the debug
+        # JSON only survives in the artifact, and we need to actually SEE
+        # mudah's real CDN URL format to know whether a size/original-quality
+        # rewrite is even possible, instead of assuming our ";s=WxH" guess
+        # still matches their current URL scheme.
+        print(f"  [images] {list_id}: {len(found)} raw URLs found, first 3 "
+              f"(pre-upsize, exactly as mudah served them):", file=sys.stderr)
+        for u in found[:3]:
+            print(f"    {u}", file=sys.stderr)
+        print(f"  [images] {list_id}: {len(ordered)} candidate photo URLs, "
+              f"first 3 (post-upsize):", file=sys.stderr)
+        for u in ordered[:3]:
+            print(f"    {u}", file=sys.stderr)
     return ordered
 
 
