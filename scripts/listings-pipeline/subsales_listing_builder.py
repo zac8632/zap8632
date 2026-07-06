@@ -26,6 +26,7 @@ Usage:
     python subsales_listing_builder.py --input penang_owners.xlsx --filter-only
 """
 import argparse
+import datetime
 import json
 import os
 import sys
@@ -73,14 +74,21 @@ def next_ref_number(registry):
 
 def assign_ref(registry, list_id, row):
     """Stable per-listing ref, assigned once and reused on every later run -
-    this is the private mapping back to the real mudah record."""
+    this is the private mapping back to the real mudah record. Also stamps
+    "first_seen" (the Listing Date shown on the site) the first time a
+    listing is ever seen - never overwritten on later runs, so it reflects
+    when it was actually first listed, not the most recent re-scrape."""
     if list_id in registry:
+        if "first_seen" not in registry[list_id]:
+            # Backfill for refs assigned before this field existed.
+            registry[list_id]["first_seen"] = datetime.date.today().isoformat()
         return registry[list_id]["ref"]
     ref = f"{REF_PREFIX}-{next_ref_number(registry)}"
     registry[list_id] = {
         "ref": ref,
         "mudah_url": row.get("Listing URL"),
         "title": row.get("Title"),
+        "first_seen": datetime.date.today().isoformat(),
     }
     return ref
 
@@ -99,11 +107,12 @@ def clean_description(v):
     return d
 
 
-def build_row(row, ref):
+def build_row(row, ref, listing_date):
     myr = price_num(row.get("Price (RM)"))
     myr_s, approx = price_lines(myr)
     hl = headline(row)
     return {
+        "Listing Date": listing_date,
         "Ref": ref,
         "Title": hl,
         "Price (RM)": myr_s or "",
@@ -164,7 +173,8 @@ def main():
         if not list_id:
             continue
         ref = assign_ref(registry, list_id, r)
-        rows.append(build_row(r, ref))
+        listing_date = registry[list_id].get("first_seen", "")
+        rows.append(build_row(r, ref, listing_date))
     save_registry(args.registry, registry)
 
     for row in rows:
