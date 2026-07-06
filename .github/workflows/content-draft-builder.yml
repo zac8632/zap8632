@@ -77,7 +77,7 @@ jobs:
         working-directory: scripts/listings-pipeline
         continue-on-error: true
         run: |
-          python watermark_calibrate.py --photos-dir posts_input --out posts_input/watermark_template.npz
+          python watermark_calibrate.py --photos-dir posts_input --out posts_input/watermark_template.npz --std-percentile 32
           python - <<'PY'
           import glob, os, sys
           sys.path.insert(0, ".")
@@ -96,18 +96,24 @@ jobs:
               mask, color, confidence = wc.load_template("posts_input/watermark_template.npz")
               preview_dir = "posts_input/watermark_preview"
               os.makedirs(preview_dir, exist_ok=True)
-              # strength=0.6 was already confirmed "quite okay" on the old
-              # hard-mask/local-blur method. Now A/B the blend TARGET at that
-              # same strength: local blur (old baseline), calibrated median
-              # color (less logo-edge bleed-through), and a hybrid of both -
-              # all with the new feathered/confidence-weighted mask so edges
-              # taper instead of cutting off hard.
+              # User feedback: "local" mode (box-blur blend) still reads as a
+              # blur smear and the mudah wordmark/logo icon are still visible -
+              # dropping "local" entirely and pushing much harder on the
+              # calibrated cross-photo color (and a hybrid) instead, since
+              # that's a real pixel estimate from many OTHER photos, not a
+              # blurred version of this one - it won't look like a blur even
+              # at high strength. Mask also widened (25 -> 32 percentile) to
+              # make sure the building-icon graphic is covered, not just the
+              # text. Test both a strong-but-not-total blend (0.85) and a
+              # full replacement (1.0) so we can see if full replacement
+              # introduces a visible flat patch despite the feathered edges.
               for i, p in enumerate(paths[:2]):
-                  for mode in ("local", "calibrated", "hybrid"):
-                      out = os.path.join(preview_dir, f"suppressed_{i}_{mode}.jpg")
-                      wc.suppress_watermark(p, mask, color, confidence, strength=0.6,
-                                             out_path=out, target_mode=mode)
-                      print(f"  wrote {out} from {p}")
+                  for mode in ("calibrated", "hybrid"):
+                      for strength in (0.85, 1.0):
+                          out = os.path.join(preview_dir, f"suppressed_{i}_{mode}_{strength}.jpg")
+                          wc.suppress_watermark(p, mask, color, confidence, strength=strength,
+                                                 out_path=out, target_mode=mode)
+                          print(f"  wrote {out} from {p}")
           PY
 
       - name: Upload posts_input for inspection
