@@ -1,5 +1,18 @@
 #!/usr/bin/env python3
-"""Stage 2 content builder: captions + clean propertyluxe-style creatives."""
+"""
+Stage 2 content builder for the listing-content-studio skill.
+
+  build_captions(listing)   -> per-platform captions (raw, native, no hashtags,
+                               soft CTA, no contact info).
+  render_creatives(...)      -> clean overlay creatives in the @propertyluxemalaysia
+                               style: full-bleed real photo, vertical project name
+                               on the left, location + spec pill bottom-left, subtle
+                               bottom scrim, optional small wordmark. Crops to 4:5
+                               and 9:16.
+
+Preview captions against the scrape (no photos needed):
+    python post_content.py --input penang_owners.xlsx --demo 5
+"""
 
 import argparse
 import os
@@ -7,7 +20,11 @@ import re
 import sys
 
 FX = {"usd": 0.213, "sgd": 0.287}
+
+# Optional small wordmark shown top-centre. Empty = nothing (user has no logo).
 WORDMARK = ""
+
+# Coastal Luxe
 NAVY = (10, 37, 64)
 AZURE = (16, 130, 189)
 WHITE = (255, 255, 255)
@@ -47,6 +64,8 @@ def _clean(v):
 
 
 def project_name(listing):
+    """The building/project name for the vertical label: the Title minus the
+    trailing area. Owner's own words."""
     title = _clean(listing.get("Title")) or ""
     area = _clean(listing.get("Location")) or ""
     if area and title.lower().rstrip(".").endswith(area.lower()):
@@ -69,6 +88,9 @@ def spec_str(listing):
 
 
 def facts_line(listing):
+    bits = []
+    for label, key in (("", "Location"),):
+        pass
     area = _clean(listing.get("Location"))
     bd = _clean(listing.get("Bedrooms"))
     ba = _clean(listing.get("Bathrooms"))
@@ -89,13 +111,41 @@ def facts_line(listing):
 
 
 CTA = "DM to arrange a viewing"
+SAVE_PROMPT = "Save this for later"
+SWIPE_PROMPT = "Swipe for more photos"
+
+
+def headline(listing):
+    """A punchier opener than the bare project name - just a different
+    arrangement of fields already on the listing (bedrooms, property type,
+    area, "new today" flag), nothing invented. Falls back to project_name()
+    when there isn't enough to build one."""
+    bits = []
+    if listing.get("Is New Today"):
+        bits.append("Just Listed:")
+    bd = _clean(listing.get("Bedrooms"))
+    ptype = _clean(listing.get("Property Type"))
+    area = _clean(listing.get("Location"))
+    if bd and ptype:
+        bits.append(f"{bd}-Bed {ptype}")
+    elif ptype:
+        bits.append(ptype)
+    if area:
+        bits.append(f"in {area}")
+    text = " ".join(bits).strip()
+    return text or project_name(listing)
 
 
 def build_captions(listing):
-    hook = project_name(listing)
+    hook = headline(listing)
     facts = facts_line(listing)
     myr_s, approx = price_lines(price_num(listing.get("Price (RM)")))
     price_block = myr_s + (f"\n{approx}" if approx else "") if myr_s else ""
+
+    # Instagram: front-loaded hook, then facts/price, a swipe cue (this is a
+    # carousel), CTA, and a save prompt - the last two are pure engagement
+    # nudges (not factual claims), both fine under the no-hashtag/no-contact
+    # rule since neither is a link, number, or handle.
     ig = []
     if hook:
         ig.append(hook)
@@ -103,8 +153,11 @@ def build_captions(listing):
         ig.append(f"📍 {facts}")
     if price_block:
         ig.append(f"💰 {price_block}")
+    ig.append(f"➡️ {SWIPE_PROMPT}")
     ig.append(f"💬 {CTA}")
+    ig.append(f"📌 {SAVE_PROMPT}")
     instagram = "\n".join(ig)
+
     th = []
     if hook:
         th.append(hook + ".")
@@ -115,19 +168,26 @@ def build_captions(listing):
         th.append(line2 + ".")
     th.append(f"{CTA}.")
     threads = " ".join(th)
+
     tk = []
     if hook:
         tk.append(hook)
     if myr_s:
         tk.append(myr_s + (f" · {facts}" if facts else ""))
+    tk.append(f"➡️ {SWIPE_PROMPT}")
     tk.append(CTA)
     tiktok = "\n".join(tk)
+
     story = f"{hook}\n{CTA}" if hook else CTA
+
     wa_bits = [b for b in [_clean(listing.get("Location")), myr_s] if b]
     whatsapp = " · ".join(wa_bits) + f"\n{CTA}" if wa_bits else CTA
+
     return {"instagram": instagram, "threads": threads, "tiktok": tiktok,
             "story": story, "whatsapp": whatsapp}
 
+
+# ------------------------------ creatives ------------------------------
 
 def _smart_crop(img, rw, rh):
     w, h = img.size
@@ -172,7 +232,7 @@ def _bottom_scrim(base):
 def _vertical_label(text, size):
     from PIL import Image, ImageDraw
     font = _font(size)
-    spaced = " ".join(text.upper())
+    spaced = " ".join(text.upper())  # airy letter-spacing like the reference
     tmp = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
     b = tmp.textbbox((0, 0), spaced, font=font)
     tw, th = b[2] - b[0], b[3] - b[1]
@@ -195,19 +255,44 @@ def _pill(img, x, y, text, size):
     return y + th + pady * 2
 
 
+def _auto_brighten(img, dark_threshold=95.0, target_mean=130.0):
+    """Tier 1 (non-generative, rules-and-constraints.md): gamma-brighten
+    photos that read as dark, up to a target mean luminance. Normally-lit
+    photos pass through untouched - this only recovers visibility of detail
+    already present, never invents anything, so no ai_enhanced flag needed."""
+    import numpy as np
+    from PIL import Image
+    gray = np.asarray(img.convert("L"), dtype=np.float64)
+    mean = gray.mean()
+    if mean <= 0 or mean >= dark_threshold:
+        return img
+    gamma = np.log(target_mean / 255.0) / np.log(mean / 255.0)
+    gamma = min(max(gamma, 0.35), 1.0)  # only ever brighten, keep it moderate
+    arr = np.asarray(img, dtype=np.float64) / 255.0
+    arr = np.power(arr, gamma) * 255.0
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGB")
+
+
 def render_creatives(photo_paths, listing, out_dir, tag=True):
     try:
         from PIL import Image, ImageDraw
     except ImportError:
-        print("Pillow not installed - skipping render.", file=sys.stderr)
+        print("Pillow not installed (pip install pillow) — skipping render.", file=sys.stderr)
         return {"4x5": [], "9x16": []}
+
     os.makedirs(out_dir, exist_ok=True)
     myr_s, _ = price_lines(price_num(listing.get("Price (RM)")))
     area = _clean(listing.get("Location"))
     proj = project_name(listing)
     specs = spec_str(listing)
+
     out = {"4x5": [], "9x16": []}
-    sizes = {"4x5": (1080, 1350, 4, 5, 70), "9x16": (1080, 1920, 9, 16, 330)}
+    # bottom_ui = clearance kept above the true bottom edge for the price/
+    # location/spec text block. 9:16 lowered from 330->220 per visual review
+    # (was sitting too high) while staying clear of the ~320px Story/TikTok UI
+    # zone documented in platform-specs.md - tune further here if needed.
+    sizes = {"4x5": (1080, 1350, 4, 5, 70), "9x16": (1080, 1920, 9, 16, 220)}
+
     for key, (W, H, rw, rh, bottom_ui) in sizes.items():
         for i, ph in enumerate(photo_paths):
             try:
@@ -215,14 +300,20 @@ def render_creatives(photo_paths, listing, out_dir, tag=True):
             except Exception as e:
                 print(f"  [render] skip {ph}: {e}", file=sys.stderr)
                 continue
+            img = _auto_brighten(img)
             base = _smart_crop(img, rw, rh).resize((W, H), Image.LANCZOS)
+
             if tag and i == 0:
                 canvas = _bottom_scrim(base)
                 margin = int(W * 0.055)
+                # vertical project name, left edge
                 if proj:
                     vlabel = _vertical_label(proj[:22], int(W * 0.05))
-                    canvas.alpha_composite(vlabel, (int(W * 0.015), int(H * 0.10)))
+                    canvas.alpha_composite(vlabel, (int(W * 0.015),
+                                                    int(H * 0.10)))
+                # bottom-left stack: price, location, spec pill
                 draw = ImageDraw.Draw(canvas, "RGBA")
+                y = H - bottom_ui
                 block_h = 0
                 if myr_s:
                     block_h += int(W * 0.075) + 12
@@ -232,18 +323,22 @@ def render_creatives(photo_paths, listing, out_dir, tag=True):
                     block_h += int(W * 0.07)
                 y = H - bottom_ui - block_h
                 if myr_s:
-                    draw.text((margin, y), myr_s, font=_font(int(W * 0.075), bold=True), fill=WHITE)
+                    f = _font(int(W * 0.075), bold=True)
+                    draw.text((margin, y), myr_s, font=f, fill=WHITE)
                     y += int(W * 0.075) + 12
                 if area:
-                    draw.text((margin, y), area, font=_font(int(W * 0.042)), fill=(235, 240, 245, 255))
+                    f = _font(int(W * 0.042))
+                    draw.text((margin, y), area, font=f, fill=(235, 240, 245, 255))
                     y += int(W * 0.042) + 10
                 if specs:
                     _pill(canvas, margin, y, specs, int(W * 0.033))
                 if WORDMARK:
                     f = _font(int(W * 0.032), bold=True)
                     b = draw.textbbox((0, 0), WORDMARK, font=f)
-                    draw.text(((W - (b[2] - b[0])) / 2, int(H * 0.03)), WORDMARK, font=f, fill=(255, 255, 255, 230))
+                    draw.text(((W - (b[2] - b[0])) / 2, int(H * 0.03)),
+                              WORDMARK, font=f, fill=(255, 255, 255, 230))
                 base = canvas.convert("RGB")
+
             fn = os.path.join(out_dir, f"{key}_{i+1:02d}.jpg")
             base.save(fn, quality=92)
             out[key].append(fn)
@@ -256,12 +351,16 @@ def main():
     ap.add_argument("--input", default="penang_owners.xlsx")
     ap.add_argument("--demo", type=int, default=5)
     args = ap.parse_args()
+
     from build_listing_posts import qualifies
     df = pd.read_excel(args.input, sheet_name="All Listings", dtype=str)
     q = df[df.apply(qualifies, axis=1)]
+    print(f"{len(q)} qualifying; captions for {min(args.demo, len(q))}:\n", file=sys.stderr)
     for _, row in q.head(args.demo).iterrows():
+        caps = build_captions(row)
         print("=" * 60)
-        print(build_captions(row)["instagram"])
+        print(f"{row.get('Title')}  |  {row.get('Price')}")
+        print(caps["instagram"])
         print()
 
 

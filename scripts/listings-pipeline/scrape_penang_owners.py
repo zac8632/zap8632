@@ -86,6 +86,48 @@ CATEGORIES = [
     ("sale-land",          "land-for-sale",                   "land"),
 ]
 
+# Hero image - the search-results ad JSON already embeds the card thumbnail,
+# same Apollo CDN pattern build_listing_posts.py upsizes to full-res for
+# qualifying listings. Grabbing just the first one here costs zero extra
+# requests and is enough to recognise the unit from the Sheet/Airtable.
+_BAD_IMG = ("sprite", "logo", "icon", ".svg", "placeholder", "avatar", "favicon", "flag", "sprites")
+_APOLLO_SIZE_RE = re.compile(r';s=\d+x\d+', re.IGNORECASE)
+
+
+def _is_photo_url(u):
+    ul = u.lower()
+    if any(b in ul for b in _BAD_IMG):
+        return False
+    return ("apollo" in ul or "akamaized" in ul or ";s=" in ul
+            or re.search(r"\.(?:jpg|jpeg|png|webp)(?:\?|;|$)", ul))
+
+
+def _all_strings(obj, out, depth=0):
+    if depth > 14:
+        return
+    if isinstance(obj, str):
+        if obj.startswith("http"):
+            out.append(obj)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _all_strings(v, out, depth + 1)
+    elif isinstance(obj, list):
+        for v in obj:
+            _all_strings(v, out, depth + 1)
+
+
+def extract_hero_image_url(item):
+    """First real photo URL straight from the search-results ad data - a
+    thumbnail-sized rendition, just enough to identify the unit. Full-res
+    photo fetching for qualifying listings still happens in Stage 2."""
+    strs = []
+    _all_strings(item, strs)
+    photos = [u for u in strs if _is_photo_url(u)]
+    if not photos:
+        return None
+    return _APOLLO_SIZE_RE.sub(";s=400x300", photos[0])
+
+
 # Field names this script tries for listing details, in priority order.
 # mudah.my's ad payload shape has varied across scrapes in this project -
 # if these come up empty, check --debug-dump output for the real key names.
@@ -540,6 +582,7 @@ def scrape_category(session, label, base_url, max_pages, owner_only, debug_dump,
             params = extract_category_params(a)
             results.append({
                 "Title":         build_title(a),
+                "Hero Image URL": extract_hero_image_url(item),
                 "Category":      build_category(label, a),
                 "Listed Date":   format_date_ddmmyyyy(_first(a, MUDAH_FIELD_CANDIDATES["listed_at"])),
                 "Price":         format_price(_first(a, MUDAH_FIELD_CANDIDATES["price"])),

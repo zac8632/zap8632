@@ -1,0 +1,38 @@
+name: Set Up CRM Schema (one-time)
+
+# Creates the "Master Listings" and "My Pipeline" tables/fields in the Lead
+# Pipeline Airtable base. Safe to re-run - skips any table that already
+# exists. Run once via workflow_dispatch, then the Button/Automation wiring
+# is a 2-minute manual step in the Airtable UI (see the script's printed
+# instructions in this run's log).
+#
+# SETUP REQUIRED: add a repo secret named AIRTABLE_API_KEY (Personal Access
+# Token, scopes: data.records:read/write, schema.bases:write).
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_id:
+        description: "Airtable base ID (the 'app...' string in the base URL)"
+        required: true
+        default: "appwkcMDwzNN9NTuo"
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: scripts/listings-pipeline
+        run: pip install requests
+
+      - name: Create Airtable tables/fields
+        working-directory: scripts/listings-pipeline
+        env:
+          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+        run: python airtable_setup.py --base-id "${{ github.event.inputs.base_id }}"

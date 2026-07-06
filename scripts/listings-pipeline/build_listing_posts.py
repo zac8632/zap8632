@@ -1,5 +1,26 @@
 #!/usr/bin/env python3
-"""Stage 1: filter to qualifying listings, fetch full-res photos, curate + render."""
+"""
+Stage 1 of the social-content pipeline (see .claude/skills/listing-content-studio/).
+
+Takes the daily scrape output (penang_owners.xlsx), filters it to the
+high-value residential listings in the target areas, and for each qualifying
+listing downloads its real photos from the mudah.my detail page. Output is a
+per-listing folder the `listing-content-studio` skill then turns into creatives +
+captions.
+
+Runs inside the GitHub Action (which can reach mudah.my). Two modes:
+    --filter-only         just print/emit the qualifying set (no network) - used
+                          to validate the filter against scrape data.
+    (default)             filter + fetch each listing's detail page + download
+                          its photos into --out.
+
+The qualifying rules and areas mirror
+.claude/skills/listing-content-studio/context.md - keep them in sync.
+
+Usage:
+    python build_listing_posts.py --input penang_owners.xlsx --out posts_input --new-only
+    python build_listing_posts.py --input penang_owners.xlsx --filter-only
+"""
 
 import argparse
 import json
@@ -11,10 +32,16 @@ import random
 
 import pandas as pd
 
+# ---- Qualifying criteria (mirror context.md) -----------------------------
+
 PRICE_THRESHOLD = 1_200_000
 
+# Areas that appear as a clean Location value.
 LOCATION_AREAS = {"tanjung bungah", "tanjong tokong", "tanjung tokong"}
 
+# Precinct / development names that usually live in the owner's Title/Description
+# rather than the Location field. Matched as case-insensitive keywords. "stp"
+# uses a word boundary to avoid matching inside other words.
 AREA_KEYWORDS = [
     "gurney", "seri tanjung pinang", "andaman",
     "tanjung bungah", "tanjung tokong", "tanjong tokong",
@@ -62,7 +89,13 @@ def extract_list_id(url):
     return m.group(1) if m else None
 
 
+# ---- Image extraction from the detail page -------------------------------
+
 NEXT_DATA_RE = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.DOTALL)
+# mudah (OLX/Carousell group) serves photos via the Apollo CDN, where the size is
+# baked into the URL as ";s=WxH". Capture any http string, then filter to photo
+# URLs and upsize the Apollo size token to full-res (avoids the small watermarked
+# thumbnails).
 URL_RE = re.compile(r'https?://[^\s"\'\\<>)]+', re.IGNORECASE)
 APOLLO_SIZE_RE = re.compile(r';s=\d+x\d+', re.IGNORECASE)
 _BAD = ("sprite", "logo", "icon", ".svg", "placeholder", "avatar", "favicon", "flag", "sprites")
@@ -77,6 +110,7 @@ def _is_photo_url(u):
 
 
 def _upsize(u):
+    # request a large size instead of the thumbnail mudah shows by default.
     return APOLLO_SIZE_RE.sub(";s=1600x1200", u)
 
 
@@ -118,6 +152,10 @@ def find_ad_node(obj, list_id, _depth=0):
 
 
 def extract_image_urls(detail_html, list_id, debug_path=None):
+    """Collect the ad's photo URLs from the detail-page JSON, upsized to
+    full-res. Falls back to scanning the raw HTML. Writes a debug dump (raw
+    media sample + resolved URLs) when debug_path is given so we can verify the
+    CDN pattern on the first run."""
     found, raw_media = [], None
     m = NEXT_DATA_RE.search(detail_html)
     if m:
@@ -161,6 +199,11 @@ def polite_sleep(a=1.0, b=2.0):
 
 
 def _url_variants(u):
+    """Candidate rewrites of an Apollo/CDN photo URL to probe for the true
+    high-res original, instead of guessing one swap and hoping. Returns
+    [(label, url), ...]. Tried in order: as-scraped, size token swapped bigger,
+    and the size token removed entirely (many CDNs serve the original upload
+    when no resize parameter is given at all)."""
     variants = [("as-scraped", u)]
     if APOLLO_SIZE_RE.search(u):
         variants.append(("upsized-1600", APOLLO_SIZE_RE.sub(";s=1600x1600", u)))
@@ -170,6 +213,9 @@ def _url_variants(u):
 
 
 def _probe_url_variants(session, url, out_path_prefix):
+    """Download every candidate variant of one photo URL to disk with its real
+    pixel dimensions in the filename, so the sharpest/largest is obvious just
+    by opening the folder - no JSON reading required."""
     try:
         from PIL import Image
     except ImportError:
@@ -239,11 +285,14 @@ def fetch_and_download(session, row, out_dir, debug=False):
         polite_sleep(0.3, 0.8)
 
     listing = {col: (None if pd.isna(row.get(col)) else row.get(col)) for col in row.index}
-    listing.pop("Phone", None)
+    listing.pop("Phone", None)  # never carry the owner's number into post inputs
     listing["listId"] = list_id
     listing["photos"] = saved
     listing["photo_source_urls"] = img_urls[:15]
 
+    # Stage 2: curate down to ~5 representative real photos (quality-scored,
+    # room-categorized - see photo_curate.py), then build creatives + captions
+    # from that curated set instead of "first N downloaded".
     try:
         import photo_curate
         import post_content
@@ -256,19 +305,17 @@ def fetch_and_download(session, row, out_dir, debug=False):
         ]
         curated_paths = [c["path"] for c in curated] or abs_photos[:5]
 
-        dewm_dir = os.path.join(listing_dir, "photos_dewatermarked")
-        os.makedirs(dewm_dir, exist_ok=True)
-        dewatermarked_paths = []
-        for p in curated_paths:
-            out_p = os.path.join(dewm_dir, os.path.basename(p))
-            if photo_curate.inpaint_watermark(p, out_p):
-                dewatermarked_paths.append(out_p)
-            else:
-                dewatermarked_paths.append(p)
-        listing["ai_enhanced"] = True
-
+        # Watermark removal DISABLED: the heuristic mask (bright + low-
+        # saturation) also flags sky/sea/mirror/plain-wall content, which is
+        # common in real estate photos, not rare - LaMa inpainted over large
+        # real parts of the photo instead of just the watermark and destroyed
+        # them. Shipping the original photo (watermark visible but intact) is
+        # far better than a ruined one. See photo_curate.py for the disabled
+        # inpaint_watermark()/remove_watermark() functions if this gets
+        # revisited with a properly trained watermark detector instead of a
+        # heuristic mask.
         creatives = post_content.render_creatives(
-            dewatermarked_paths, row, os.path.join(listing_dir, "creatives"))
+            curated_paths, row, os.path.join(listing_dir, "creatives"))
         listing["creatives"] = {
             k: [os.path.relpath(p, out_dir) for p in v] for k, v in creatives.items()
         }
@@ -298,10 +345,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--input", default="penang_owners.xlsx")
     ap.add_argument("--out", default="posts_input")
-    ap.add_argument("--new-only", action="store_true")
-    ap.add_argument("--registry", default="posts_input/posted_registry.json")
-    ap.add_argument("--filter-only", action="store_true")
-    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--new-only", action="store_true",
+                    help="Only listings with Is New Today == True (the daily 'Just Listed' set).")
+    ap.add_argument("--registry", default="posts_input/posted_registry.json",
+                    help="JSON of already-posted listIds to skip.")
+    ap.add_argument("--filter-only", action="store_true",
+                    help="Print the qualifying set and exit (no network, no downloads).")
+    ap.add_argument("--limit", type=int, default=0, help="Cap listings processed (0 = all).")
     args = ap.parse_args()
 
     df = pd.read_excel(args.input, sheet_name="All Listings", dtype=str)
@@ -318,7 +368,9 @@ def main():
     if args.limit:
         q = q.head(args.limit)
 
-    print(f"{len(q)}/{total} listings qualify.", file=sys.stderr)
+    print(f"{len(q)}/{total} listings qualify "
+          f"(residential, For Sale, >= RM{PRICE_THRESHOLD:,}, target areas"
+          f"{', new only' if args.new_only else ''}).", file=sys.stderr)
     for _, r in q.iterrows():
         print(f"  - {extract_list_id(r['Listing URL'])} | {r.get('Location')} | "
               f"{r.get('Price')} | {str(r.get('Title'))[:60]}", file=sys.stderr)
@@ -344,7 +396,7 @@ def main():
         if fetch_and_download(session, r, args.out, debug=(idx == 0)):
             done += 1
         polite_sleep()
-    print(f"Downloaded photos for {done}/{len(q)} into {args.out}/", file=sys.stderr)
+    print(f"Downloaded photos for {done}/{len(q)} qualifying listings into {args.out}/", file=sys.stderr)
 
 
 if __name__ == "__main__":
