@@ -1,0 +1,91 @@
+name: Daily Data Sync
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+    inputs:
+      pages:
+        description: "Max pages to crawl per category"
+        required: false
+        default: "200"
+      statewide:
+        description: "Scrape all of Penang state (not just the island)"
+        required: false
+        default: "true"
+
+permissions:
+  contents: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: scripts/listings-pipeline
+        run: pip install -r requirements.txt
+
+      - name: Restore seen-listings registry from data branch
+        working-directory: scripts/listings-pipeline
+        run: |
+          git fetch origin data/penang-owners-scrape || true
+          git show origin/data/penang-owners-scrape:penang_seen_listings.json \
+            > penang_seen_listings.json 2>/dev/null || echo "{}" > penang_seen_listings.json
+
+      - name: Write Google service-account key from secret
+        working-directory: scripts/listings-pipeline
+        run: echo '${{ secrets.GSHEET_SERVICE_ACCOUNT_JSON }}' > gsheet_key.json
+
+      - name: Run scraper
+        working-directory: scripts/listings-pipeline
+        env:
+          PAGES: ${{ github.event.inputs.pages || '200' }}
+          STATEWIDE: ${{ github.event.inputs.statewide || 'true' }}
+        run: |
+          STATEWIDE_FLAG=""
+          if [ "$STATEWIDE" = "true" ]; then STATEWIDE_FLAG="--statewide"; fi
+          python scrape_penang_owners.py \
+            $STATEWIDE_FLAG \
+            --pages "$PAGES" \
+            --fetch-details \
+            --detail-limit 50 \
+            --output penang_owners.xlsx \
+            --seen-file penang_seen_listings.json \
+            --gsheet-id "1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI" \
+            --gsheet-key gsheet_key.json
+
+      - name: Remove service-account key before committing
+        working-directory: scripts/listings-pipeline
+        run: rm -f gsheet_key.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: penang-owners-listings
+          path: scripts/listings-pipeline/penang_owners.xlsx
+          retention-days: 14
+
+      - name: Commit results to data branch
+        working-directory: scripts/listings-pipeline
+        run: |
+          cp penang_owners.xlsx /tmp/penang_owners.xlsx
+          cp penang_seen_listings.json /tmp/penang_seen_listings.json
+          rm -f penang_owners.xlsx penang_seen_listings.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git fetch origin data/penang-owners-scrape; then
+            git checkout -B data/penang-owners-scrape FETCH_HEAD
+          else
+            git checkout --orphan data/penang-owners-scrape
+            git rm -rf . > /dev/null 2>&1 || true
+          fi
+          cp /tmp/penang_owners.xlsx penang_owners.xlsx
+          cp /tmp/penang_seen_listings.json penang_seen_listings.json
+          git add -f penang_owners.xlsx penang_seen_listings.json
+          git commit -m "Scrape results ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          git push origin data/penang-owners-scrape
