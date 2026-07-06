@@ -36,7 +36,6 @@ jobs:
           pip install curl_cffi pandas openpyxl pillow numpy
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install transformers
-          pip install simple-lama-inpainting
 
       - name: Restore latest scrape from data branch
         working-directory: scripts/mudah-penang-scraper

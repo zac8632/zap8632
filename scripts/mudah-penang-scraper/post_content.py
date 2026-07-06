@@ -225,6 +225,24 @@ def _pill(img, x, y, text, size):
     return y + th + pady * 2
 
 
+def _auto_brighten(img, dark_threshold=95.0, target_mean=130.0):
+    """Tier 1 (non-generative, rules-and-constraints.md): gamma-brighten
+    photos that read as dark, up to a target mean luminance. Normally-lit
+    photos pass through untouched - this only recovers visibility of detail
+    already present, never invents anything, so no ai_enhanced flag needed."""
+    import numpy as np
+    from PIL import Image
+    gray = np.asarray(img.convert("L"), dtype=np.float64)
+    mean = gray.mean()
+    if mean <= 0 or mean >= dark_threshold:
+        return img
+    gamma = np.log(target_mean / 255.0) / np.log(mean / 255.0)
+    gamma = min(max(gamma, 0.35), 1.0)  # only ever brighten, keep it moderate
+    arr = np.asarray(img, dtype=np.float64) / 255.0
+    arr = np.power(arr, gamma) * 255.0
+    return Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8), "RGB")
+
+
 def render_creatives(photo_paths, listing, out_dir, tag=True):
     try:
         from PIL import Image, ImageDraw
@@ -239,7 +257,11 @@ def render_creatives(photo_paths, listing, out_dir, tag=True):
     specs = spec_str(listing)
 
     out = {"4x5": [], "9x16": []}
-    sizes = {"4x5": (1080, 1350, 4, 5, 70), "9x16": (1080, 1920, 9, 16, 330)}
+    # bottom_ui = clearance kept above the true bottom edge for the price/
+    # location/spec text block. 9:16 lowered from 330->220 per visual review
+    # (was sitting too high) while staying clear of the ~320px Story/TikTok UI
+    # zone documented in platform-specs.md - tune further here if needed.
+    sizes = {"4x5": (1080, 1350, 4, 5, 70), "9x16": (1080, 1920, 9, 16, 220)}
 
     for key, (W, H, rw, rh, bottom_ui) in sizes.items():
         for i, ph in enumerate(photo_paths):
@@ -248,6 +270,7 @@ def render_creatives(photo_paths, listing, out_dir, tag=True):
             except Exception as e:
                 print(f"  [render] skip {ph}: {e}", file=sys.stderr)
                 continue
+            img = _auto_brighten(img)
             base = _smart_crop(img, rw, rh).resize((W, H), Image.LANCZOS)
 
             if tag and i == 0:
