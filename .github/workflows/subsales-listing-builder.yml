@@ -22,10 +22,9 @@ on:
         description: "Max qualifying listings to process (0 = all)"
         required: false
         default: "0"
-  # Run shortly after the daily scrape. Uncomment once confirmed working via
-  # a manual test.
-  # schedule:
-  #   - cron: "15 0 * * *"
+  # Run shortly after the daily scrape (which runs at 00:00 UTC).
+  schedule:
+    - cron: "15 0 * * *"
 
 permissions:
   contents: write
