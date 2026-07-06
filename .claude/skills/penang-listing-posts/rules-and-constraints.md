@@ -33,6 +33,14 @@ photo but never invent one. Three tiers:
 - **Tier 2 — allowed, flagged for approval:** removing distractions that are not
   part of the property (trash bin, stray cable, watermark, reflection). Must NOT
   add or remove any actual feature of the space. Set `ai_enhanced = true`.
+  - **Mudah's watermark specifically**: it's the platform's mark over the
+    owner's own photo, not a feature of the property — removal is Tier 2.
+    Implementation (`photo_curate.remove_watermark`) un-blends the
+    translucent overlay by inverting its alpha blend (`real ≈ (visible -
+    alpha·W) / (1-alpha)`) within its typical region — this *recovers* real
+    pixels the overlay was mixed over, it does not generate replacement
+    content, so it stays out of Tier 3. Always flagged for review since the
+    alpha/color are estimated, not exactly calibrated per photo.
 - **Tier 3 — never:** generating or replacing rooms, views, finishes,
   skies-as-a-feature; **virtual staging** (adding furniture to an empty room);
   or substituting a synthetic hero image. If a photo is too poor to fix within

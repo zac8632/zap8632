@@ -2,8 +2,8 @@
 """
 Photo curation for the penang-listing-posts pipeline.
 
-Two jobs, both operating on REAL photos only (organizing what exists, never
-inventing content - stays within the no-hallucination rule):
+Jobs, all operating on REAL photos only (organizing/restoring what exists,
+never inventing content - stays within the no-hallucination rule):
 
   photo_score(path)                 -> blur (Laplacian variance) + resolution
   classify_rooms(paths)             -> zero-shot room-type labels (CLIP)
@@ -11,6 +11,12 @@ inventing content - stays within the no-hallucination rule):
                                        room category, covering both condo units
                                        and landed homes (extra categories for
                                        dining room, garden, car porch, etc.)
+  remove_watermark(path)            -> Tier 2 (rules-and-constraints.md):
+                                       un-blends mudah's semi-transparent
+                                       watermark by inverting its alpha blend,
+                                       recovering real pixels rather than
+                                       generating replacement content. Always
+                                       flags ai_enhanced=true for review.
 """
 
 import sys
@@ -185,3 +191,55 @@ def select_representative_photos(photo_paths, k=5):
         return (2,)
     chosen.sort(key=sort_key)
     return chosen[:k]
+
+
+# Approximate region + blend params for mudah's watermark, from visual
+# inspection of real sample photos. box is (x1,y1,x2,y2) as fractions of
+# width/height; alpha/color are the platform's translucent-overlay blend.
+# These are estimates, not exact calibration - tune here if output looks off.
+WATERMARK_BOX = (0.03, 0.38, 0.97, 0.85)
+WATERMARK_ALPHA = 0.22
+WATERMARK_RGB = (235, 235, 235)
+_FEATHER_FRAC = 0.06  # soften the mask edge so there's no visible seam
+
+
+def _feather_mask(h, w, box, feather_frac):
+    x1, y1, x2, y2 = int(box[0] * w), int(box[1] * h), int(box[2] * w), int(box[3] * h)
+    mask = np.zeros((h, w), dtype=np.float64)
+    mask[y1:y2, x1:x2] = 1.0
+    fx = max(1, int((x2 - x1) * feather_frac))
+    fy = max(1, int((y2 - y1) * feather_frac))
+    # simple separable box-blur feather (no scipy dependency)
+    for _ in range(3):
+        mask = _box_blur_1d(mask, fx, axis=1)
+        mask = _box_blur_1d(mask, fy, axis=0)
+    return np.clip(mask, 0.0, 1.0)
+
+
+def _box_blur_1d(arr, radius, axis):
+    if radius < 1:
+        return arr
+    kernel = np.ones(radius * 2 + 1) / (radius * 2 + 1)
+    return np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="same"), axis, arr)
+
+
+def remove_watermark(path, out_path=None, box=WATERMARK_BOX,
+                      alpha=WATERMARK_ALPHA, watermark_rgb=WATERMARK_RGB):
+    """Un-blend mudah's translucent watermark within its typical region:
+    visible = alpha*W + (1-alpha)*real  =>  real ~= (visible - alpha*W) / (1-alpha).
+    This recovers real pixels rather than generating new content (Tier 2, not
+    Tier 3) - accuracy depends on how close alpha/watermark_rgb are to the
+    platform's actual overlay; mask edges are feathered so there's no seam.
+    Returns True if applied."""
+    try:
+        img = Image.open(path).convert("RGB")
+    except Exception:
+        return False
+    w, h = img.size
+    arr = np.asarray(img, dtype=np.float64)
+    mask = _feather_mask(h, w, box, _FEATHER_FRAC)[:, :, None]
+    W = np.array(watermark_rgb, dtype=np.float64)
+    restored = np.clip((arr - alpha * W) / (1 - alpha), 0, 255)
+    out_arr = arr * (1 - mask) + restored * mask
+    Image.fromarray(out_arr.astype(np.uint8), "RGB").save(out_path or path, quality=95)
+    return True
