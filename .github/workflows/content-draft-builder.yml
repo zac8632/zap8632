@@ -96,10 +96,15 @@ jobs:
               mask, color = wc.load_template("posts_input/watermark_template.npz")
               preview_dir = "posts_input/watermark_preview"
               os.makedirs(preview_dir, exist_ok=True)
-              for i, p in enumerate(paths[:4]):
-                  out = os.path.join(preview_dir, f"suppressed_{i}.jpg")
-                  wc.suppress_watermark(p, mask, color, strength=0.6, out_path=out)
-                  print(f"  wrote {out} from {p}")
+              # Generate a few strengths side by side on the same 2 photos so we
+              # can actually compare "how much fainter" instead of guessing one
+              # value - user asked to reduce transparency more than the first
+              # test (strength=0.6) managed to.
+              for i, p in enumerate(paths[:2]):
+                  for strength in (0.6, 0.8, 0.95):
+                      out = os.path.join(preview_dir, f"suppressed_{i}_strength{strength}.jpg")
+                      wc.suppress_watermark(p, mask, color, strength=strength, out_path=out)
+                      print(f"  wrote {out} from {p}")
           PY
 
       - name: Upload posts_input for inspection
