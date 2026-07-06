@@ -24,6 +24,7 @@ daily scrape  →  filter (≥RM1.2M, residential, target areas)
 - `caption-playbook.md` — per-platform caption rules.
 - `platform-specs.md` — exact sizes, slide caps, caption limits, safe zones.
 - `review-checklist.md` — the approval checklist (used when reviewing in Airtable).
+- `video-stage.md` — Stage 3 video spec (Ken Burns from the real photos; code later).
 
 ## Decisions (locked)
 - **Brand**: Coastal Luxe palette + Montserrat/Playfair fonts; no logo/name/
@@ -40,6 +41,8 @@ daily scrape  →  filter (≥RM1.2M, residential, target areas)
 1. **Filter** — DONE, validated on real data (21/250 qualify, correct).
 2. **Image fetch** — engine built (`build_listing_posts.py` + test workflow);
    pending a confirmation run to verify mudah photo extraction.
-3. **Creative render** (Coastal Luxe cover, 4:5 + 9:16) + caption gen — next.
-4. **Airtable** records for review (needs a token + base ID).
-5. LAST: Publer scheduling of approved rows.
+3. **Raw-native creatives** (crop 4:5 + 9:16, minimal price tag) + caption gen — DONE (captions validated; render runs in the Action).
+4. **Enhancement (Tier 1/2)** + **registry write-back** + **video** (Stage 3, see `video-stage.md`) — all reuse the photos.
+5. **Airtable** records for review (needs a token + base ID).
+6. **Auto-daily** chaining after the scrape.
+7. LAST: Publer scheduling of approved rows.
