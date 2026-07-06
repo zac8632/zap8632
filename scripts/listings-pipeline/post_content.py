@@ -189,17 +189,48 @@ def build_captions(listing):
 
 # ------------------------------ creatives ------------------------------
 
-def _smart_crop(img, rw, rh):
+def _smart_crop(img, rw, rh, max_crop_loss=None):
+    """Center-crop to the target ratio. If max_crop_loss is set and the crop
+    would remove more than that fraction of the image's width/height, returns
+    None instead - the caller should letterbox rather than risk cutting off
+    real content (common when a 4:5 or landscape photo is forced into a much
+    narrower 9:16 Story frame)."""
     w, h = img.size
     target = rw / rh
     cur = w / h
     if cur > target:
         nw = int(h * target)
+        if max_crop_loss is not None and (1 - nw / w) > max_crop_loss:
+            return None
         left = (w - nw) // 2
         return img.crop((left, 0, left + nw, h))
     nh = int(w / target)
+    if max_crop_loss is not None and (1 - nh / h) > max_crop_loss:
+        return None
     top = int((h - nh) * 0.4)
     return img.crop((0, top, w, top + nh))
+
+
+def _letterbox_fill(img, W, H):
+    """Used when a hard crop would lose too much of the photo (e.g. a 4:5 or
+    landscape photo forced into 9:16): fills the full canvas with a blurred,
+    darkened crop of the same photo, then composites the WHOLE original photo
+    (scaled to fit, nothing cut off) centered on top. Standard technique for
+    turning a wider photo into Story/Reels format without losing content."""
+    from PIL import Image, ImageFilter, ImageEnhance
+    bg = _smart_crop(img, W, H).resize((W, H), Image.LANCZOS)
+    bg = bg.filter(ImageFilter.GaussianBlur(40))
+    bg = ImageEnhance.Brightness(bg).enhance(0.55)
+
+    scale = W / img.width
+    fit_w, fit_h = W, int(img.height * scale)
+    if fit_h > H:
+        scale = H / img.height
+        fit_w, fit_h = int(img.width * scale), H
+    fitted = img.resize((fit_w, fit_h), Image.LANCZOS)
+    canvas = bg.convert("RGB")
+    canvas.paste(fitted, ((W - fit_w) // 2, (H - fit_h) // 2))
+    return canvas
 
 
 def _font(size, bold=False):
@@ -301,7 +332,13 @@ def render_creatives(photo_paths, listing, out_dir, tag=True):
                 print(f"  [render] skip {ph}: {e}", file=sys.stderr)
                 continue
             img = _auto_brighten(img)
-            base = _smart_crop(img, rw, rh).resize((W, H), Image.LANCZOS)
+            # 9:16 is a much narrower target than most real-estate photos are
+            # shot in - a plain center-crop risks cutting off real content, so
+            # fall back to a letterboxed (blurred-background) fill whenever
+            # the crop would lose more than 30% of the frame.
+            cropped = _smart_crop(img, rw, rh, max_crop_loss=0.30 if key == "9x16" else None)
+            base = (cropped.resize((W, H), Image.LANCZOS) if cropped is not None
+                    else _letterbox_fill(img, W, H))
 
             if tag and i == 0:
                 canvas = _bottom_scrim(base)
