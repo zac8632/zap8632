@@ -198,6 +198,50 @@ def polite_sleep(a=1.0, b=2.0):
     time.sleep(random.uniform(a, b))
 
 
+def _url_variants(u):
+    """Candidate rewrites of an Apollo/CDN photo URL to probe for the true
+    high-res original, instead of guessing one swap and hoping. Returns
+    [(label, url), ...]. Tried in order: as-scraped, size token swapped bigger,
+    and the size token removed entirely (many CDNs serve the original upload
+    when no resize parameter is given at all)."""
+    variants = [("as-scraped", u)]
+    if APOLLO_SIZE_RE.search(u):
+        variants.append(("upsized-1600", APOLLO_SIZE_RE.sub(";s=1600x1600", u)))
+        variants.append(("upsized-2400", APOLLO_SIZE_RE.sub(";s=2400x2400", u)))
+        variants.append(("no-size-param", APOLLO_SIZE_RE.sub("", u)))
+    return variants
+
+
+def _probe_url_variants(session, url, out_path_prefix):
+    """Download every candidate variant of one photo URL to disk with its real
+    pixel dimensions in the filename, so the sharpest/largest is obvious just
+    by opening the folder - no JSON reading required."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return
+    for label, vu in _url_variants(url):
+        try:
+            resp = session.get(vu, timeout=20)
+            if resp.status_code != 200 or not resp.content:
+                print(f"  [probe] {label}: HTTP {resp.status_code}", file=sys.stderr)
+                continue
+            tmp = f"{out_path_prefix}_{label}.tmp"
+            with open(tmp, "wb") as f:
+                f.write(resp.content)
+            try:
+                with Image.open(tmp) as im:
+                    w, h = im.size
+            except Exception:
+                w = h = 0
+            fn = f"{out_path_prefix}_{label}_{w}x{h}.jpg"
+            os.replace(tmp, fn)
+            print(f"  [probe] {label}: {w}x{h} ({len(resp.content)} bytes) -> {os.path.basename(fn)}",
+                  file=sys.stderr)
+        except Exception as e:
+            print(f"  [probe] {label}: {e}", file=sys.stderr)
+
+
 def fetch_and_download(session, row, out_dir, debug=False):
     url = row.get("Listing URL", "")
     list_id = extract_list_id(url)
@@ -220,6 +264,12 @@ def fetch_and_download(session, row, out_dir, debug=False):
     photos_dir = os.path.join(listing_dir, "photos")
     os.makedirs(photos_dir, exist_ok=True)
 
+    if debug and img_urls:
+        probe_dir = os.path.join(listing_dir, "debug_photo_variants")
+        os.makedirs(probe_dir, exist_ok=True)
+        print(f"  [probe] testing URL variants for photo 1 of {list_id}...", file=sys.stderr)
+        _probe_url_variants(session, img_urls[0], os.path.join(probe_dir, "photo1"))
+
     saved = []
     for i, iu in enumerate(img_urls[:15], 1):
         try:
@@ -240,12 +290,22 @@ def fetch_and_download(session, row, out_dir, debug=False):
     listing["photos"] = saved
     listing["photo_source_urls"] = img_urls[:15]
 
-    # Stage 2: raw-native creatives (crop + minimal tag) and captions.
+    # Stage 2: curate down to ~5 representative real photos (quality-scored,
+    # room-categorized - see photo_curate.py), then build creatives + captions
+    # from that curated set instead of "first N downloaded".
     try:
+        import photo_curate
         import post_content
         abs_photos = [os.path.join(out_dir, p) for p in saved]
+        curated = photo_curate.select_representative_photos(abs_photos, k=5)
+        listing["curated_photos"] = [
+            {"path": os.path.relpath(c["path"], out_dir), "category": c["category"],
+             "sharpness": round(c["sharpness"], 1), "confidence": round(c["confidence"], 3)}
+            for c in curated
+        ]
+        curated_paths = [c["path"] for c in curated] or abs_photos[:5]
         creatives = post_content.render_creatives(
-            abs_photos, row, os.path.join(listing_dir, "creatives"))
+            curated_paths, row, os.path.join(listing_dir, "creatives"))
         listing["creatives"] = {
             k: [os.path.relpath(p, out_dir) for p in v] for k, v in creatives.items()
         }

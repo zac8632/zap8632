@@ -53,17 +53,34 @@ posted registry") so nothing is reposted. Default batch = listings where
 listing (no cap — if 10 qualify, produce 10). Log how many were dropped and why.
 Never pad the set to hit a number.
 
-### 2. Pull the listing's real photos
+### 2. Pull the listing's real photos (at true full resolution)
 For each qualifying listing, fetch its detail page (same curl_cffi +
 `__NEXT_DATA__` technique as the scraper) and extract the media/image URLs.
-Download them. These real photos are the carousel body — see
-`rules-and-constraints.md` before any enhancement.
+mudah serves photos via an Apollo/CDN URL with a size token baked in
+(`;s=WxH`) — request the largest real rendition (see `_url_variants` in
+`build_listing_posts.py`, which probes as-scraped / upsized / no-size-param
+variants rather than guessing one). Download the results. Owner-uploaded
+photos are still whatever quality the owner's phone captured — this step gets
+the best AVAILABLE version, it can't invent detail that was never uploaded.
 
-### 3. Assess image quality; enhance only if needed
-Per the image-integrity rule: low-res/blurry/dark photos may be
-**enhanced** (denoise, sharpen, brighten, upscale) — never regenerated into new
-content. Any AI-touched image is flagged `ai_enhanced = true` in Airtable so the
-reviewer approves it explicitly. Keep the look bright and clean; do not overdo it.
+### 3. Curate down to ~5 representative photos (quality + room type)
+See `photo_curate.py`. Owner photo sets are often mixed quality (some sharp,
+some blurry) and unordered. For each downloaded photo, score:
+- **Quality** — Laplacian-variance blur detection + resolution. Blurry/tiny
+  photos are deprioritized, never picked as the hero.
+- **Room type** — zero-shot classification (CLIP) into: exterior/facade,
+  living room, kitchen, bedroom, bathroom (core five), plus landed-home
+  extras (dining room, garden/compound, car porch/garage, balcony/patio,
+  staircase/hallway) used as fallbacks when a core room is missing or a
+  landed home has more distinct spaces than a condo unit.
+
+This is classification of REAL photos, not generation — it organizes what
+exists, so it stays within the no-hallucination rule. Pick the sharpest photo
+per core category (exterior first), fall back to landed-home extras or plain
+quality ranking to fill any remaining slots, capped at 5. Enhancement
+(Tier 1/2 only, per `rules-and-constraints.md`) may still be applied to the
+curated set — never regenerated into new content. Any AI-touched image is
+flagged `ai_enhanced = true` so the reviewer approves it explicitly.
 
 ### 4. Build the raw-native creatives (NOT posters)
 Using `style-guide.md` (RAW NATIVE): the real photos are the content. Smart-crop

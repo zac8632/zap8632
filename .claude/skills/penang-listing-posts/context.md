@@ -69,11 +69,30 @@ Notes:
   `social-automation-output/posted_registry.json` ({listId: first_posted_date}),
   same pattern as the scraper's seen-file. Skip any listId already in it.
 
-## Rendering approach (RAW NATIVE — not posters)
-- Direction: the real photos ARE the content; we do NOT build designed posters.
-  See `style-guide.md`. Rendering is simple image ops (Pillow): smart-crop each
-  real photo to 4:5 and 9:16, and optionally composite ONE minimal price/area tag
-  on the first photo. No gradients, script fonts, stat bands, badges, or logos.
+## Rendering approach — clean overlay (reference: @propertyluxemalaysia)
+- Direction: full-bleed real photo + a light, elegant text overlay (NOT a heavy
+  designed poster). See `style-guide.md`. Layout: vertical project name down the
+  left edge, bottom-left stack of price + location + a rounded spec pill
+  (`3 Beds | 3 Baths | 2827 sqft`, omitting any unknown part), subtle bottom
+  gradient scrim for legibility. No logo/handle/link/phone number anywhere.
+- Rendering is Pillow (crop to 4:5 / 9:16 + composite the overlay on the hero
+  photo only — see `photo_curate.py` for how the hero is chosen).
+
+## Photo pipeline (full-res fetch → curate → render)
+1. **Full-res fetch**: mudah's Apollo/CDN URLs carry a size token (`;s=WxH`).
+   `build_listing_posts.py` probes multiple rewrites (as-scraped / upsized /
+   size-param removed) rather than guessing one, and keeps the best. This gets
+   the best AVAILABLE version — it cannot invent detail beyond what the owner
+   uploaded.
+2. **Curate** (`photo_curate.py`): score every downloaded photo for blur
+   (Laplacian variance) and resolution, and classify it into a room category
+   (zero-shot CLIP: exterior/facade, living room, kitchen, bedroom, bathroom —
+   plus landed-home extras: dining room, garden/compound, car porch/garage,
+   balcony/patio, staircase/hallway, used as fallbacks). Pick the sharpest photo
+   per category, capped at 5, exterior first. This is classification of real
+   photos, not generation — stays within the no-hallucination rule.
+3. **Render**: the overlay goes on the curated hero photo only; the rest ride
+   as plain carousel slides.
 
 ## Image source & where the skill runs
 - IMPORTANT: mudah.my is network-blocked from the Claude web/cloud environment,
