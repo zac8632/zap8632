@@ -246,6 +246,37 @@ def tg_send_message(token, chat_id, text):
         print(f"  [telegram] failed to send confirmation message: {e}", file=sys.stderr)
 
 
+def tg_send_media_group(token, chat_id, photo_paths, caption=None):
+    """Send up to 10 photos as a single Telegram album - the caption (if
+    given) shows under the first photo. Lets the user save/forward the
+    finished creatives straight from the chat, no zip download needed."""
+    photo_paths = photo_paths[:10]
+    if not photo_paths:
+        return
+    media = []
+    files = {}
+    for i, path in enumerate(photo_paths):
+        key = f"photo{i}"
+        entry = {"type": "photo", "media": f"attach://{key}"}
+        if i == 0 and caption:
+            entry["caption"] = caption
+        media.append(entry)
+        files[key] = open(path, "rb")
+    try:
+        r = requests.post(
+            TELEGRAM_API.format(token=token, method="sendMediaGroup"),
+            data={"chat_id": chat_id, "media": json.dumps(media)},
+            files=files, timeout=60)
+        r.raise_for_status()
+        if not r.json().get("ok"):
+            print(f"  [telegram] sendMediaGroup failed: {r.json()}", file=sys.stderr)
+    except Exception as e:
+        print(f"  [telegram] failed to send media group: {e}", file=sys.stderr)
+    finally:
+        for f in files.values():
+            f.close()
+
+
 def download_telegram_file(token, file_id, out_path):
     file_info = tg_call(token, "getFile", {"file_id": file_id})
     file_path = file_info["file_path"]
@@ -529,7 +560,7 @@ def main():
             continue
         curated = photo_curate.select_representative_photos(photos, k=5)
         curated_paths = [c["path"] for c in curated] or photos[:5]
-        post_content.render_creatives(
+        creatives = post_content.render_creatives(
             curated_paths, listing, os.path.join(listing_dir, "creatives"))
         caps = post_content.build_captions(listing)
         with open(os.path.join(listing_dir, "captions.md"), "w") as f:
@@ -537,11 +568,25 @@ def main():
                 f.write(f"## {plat}\n\n{txt}\n\n")
         print(f"  [ok] {listing['_batch_id']}: {len(curated_paths)} photos curated, "
               f"creatives + captions written", file=sys.stderr)
+
+        # Send the finished creatives + every platform's caption straight back
+        # into the chat - no artifact/zip download needed, just save/forward
+        # the album and copy-paste whichever caption you're posting to.
+        chat_id = listing["_chat_id"]
+        feed_creatives = creatives.get("4x5", [])
+        if feed_creatives:
+            tg_send_media_group(
+                token, chat_id, feed_creatives,
+                caption=f"'{listing.get('Title') or listing['_batch_id']}' - "
+                        f"{len(feed_creatives)} ready-to-post creative(s)")
+        else:
+            tg_send_message(token, chat_id, "No creatives were rendered (no usable photos).")
+        for plat, txt in caps.items():
+            tg_send_message(token, chat_id, f"[{plat.upper()} CAPTION]\n\n{txt}")
         tg_send_message(
-            token, listing["_chat_id"],
-            f"Done - '{listing.get('Title') or listing['_batch_id']}' is ready: "
-            f"{len(curated_paths)} photos curated, creatives + captions written. "
-            f"It'll show up in Airtable shortly.")
+            token, chat_id,
+            f"Done - '{listing.get('Title') or listing['_batch_id']}' is ready above. "
+            f"It'll also show up in Airtable shortly.")
 
 
 if __name__ == "__main__":

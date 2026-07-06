@@ -7,22 +7,30 @@ but format, length, and tone are tuned per platform.
 only (protects privacy AND avoids shadowbans; feeds penalise off-platform pushes).
 
 ## Shared building blocks (assemble from scraped data only)
-- **Hook** — one line, benefit or standout fact from the owner's text.
+- **Headline** — not just the bare project name: recombines fields already on
+  the listing ("Just Listed:" if new-today, "{Beds}-Bed {Property Type} in
+  {Area}") into a punchier opener. Still zero invented facts, just a better
+  arrangement of what's already there. Falls back to the bare project name if
+  there isn't enough to build one.
 - **Facts line** — Area · Beds/Baths (if known) · Size (if known) · Tenure (if
   known).
 - **Price** — MYR primary, then "≈ USD … / SGD … (approx.)".
+- **Swipe cue** — "Swipe for more photos" on carousel platforms (IG feed,
+  TikTok) — an instruction, not a claim, drives completion through the slides.
 - **CTA** — soft only: "DM to arrange a viewing" / "Comment INFO" / "Save & share".
   Never a number, link, or handle.
+- **Save prompt** — "Save this for later" on Instagram - an engagement nudge
+  (saves help reach), not a factual claim, still no link/number/handle.
 - **Compliance tail** — light, honest. No "guaranteed", no invented ROI.
 
 ## Instagram (feed carousel)
-- Length: ~125 chars visible before "more" — front-load the hook + area + price.
-- Structure: Hook → short facts → price → CTA → 1 line of value.
-- Emoji: sparing, tasteful (📍 🛏️ 📐 💬).
+- Length: ~125 chars visible before "more" — front-load the headline + area + price.
+- Structure: Headline → short facts → price → swipe cue → CTA → save prompt.
+- Emoji: sparing, tasteful (📍 🛏️ 📐 💬 ➡️ 📌).
 
 ## TikTok (carousel / photo post)
-- Shorter, punchier, trend-aware voice. Hook in first 2–3 words.
-- 1–2 short lines + price + CTA. Caption is secondary to the visuals here.
+- Shorter, punchier, trend-aware voice. Headline in first 2–3 words.
+- 1–2 short lines + price + swipe cue + CTA. Caption is secondary to the visuals here.
 
 ## Threads
 - Conversational, lower-gloss than IG. 1–3 short sentences.
@@ -47,10 +55,12 @@ only (protects privacy AND avoids shadowbans; feeds penalise off-platform pushes
 
 ## Example skeleton (fill only with real data)
 ```
-✨ {hook from owner's description}
+{Just Listed: }{Beds}-Bed {Property Type} in {Area}
 📍 {Area} · {Beds}🛏 {Baths}🛁 · {Size} sqft · {Tenure}
 💰 RM {price}  (≈ USD {usd}k / SGD {sgd}k approx.)
+➡️ Swipe for more photos
 💬 {soft CTA — e.g. DM to arrange a viewing}
+📌 Save this for later
 ```
 Any `{field}` that is blank is dropped from the line — never shown empty.
 No number, link, @handle, or hashtag anywhere in the caption.

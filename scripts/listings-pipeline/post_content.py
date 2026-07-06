@@ -111,14 +111,41 @@ def facts_line(listing):
 
 
 CTA = "DM to arrange a viewing"
+SAVE_PROMPT = "Save this for later"
+SWIPE_PROMPT = "Swipe for more photos"
+
+
+def headline(listing):
+    """A punchier opener than the bare project name - just a different
+    arrangement of fields already on the listing (bedrooms, property type,
+    area, "new today" flag), nothing invented. Falls back to project_name()
+    when there isn't enough to build one."""
+    bits = []
+    if listing.get("Is New Today"):
+        bits.append("Just Listed:")
+    bd = _clean(listing.get("Bedrooms"))
+    ptype = _clean(listing.get("Property Type"))
+    area = _clean(listing.get("Location"))
+    if bd and ptype:
+        bits.append(f"{bd}-Bed {ptype}")
+    elif ptype:
+        bits.append(ptype)
+    if area:
+        bits.append(f"in {area}")
+    text = " ".join(bits).strip()
+    return text or project_name(listing)
 
 
 def build_captions(listing):
-    hook = project_name(listing)
+    hook = headline(listing)
     facts = facts_line(listing)
     myr_s, approx = price_lines(price_num(listing.get("Price (RM)")))
     price_block = myr_s + (f"\n{approx}" if approx else "") if myr_s else ""
 
+    # Instagram: front-loaded hook, then facts/price, a swipe cue (this is a
+    # carousel), CTA, and a save prompt - the last two are pure engagement
+    # nudges (not factual claims), both fine under the no-hashtag/no-contact
+    # rule since neither is a link, number, or handle.
     ig = []
     if hook:
         ig.append(hook)
@@ -126,7 +153,9 @@ def build_captions(listing):
         ig.append(f"📍 {facts}")
     if price_block:
         ig.append(f"💰 {price_block}")
+    ig.append(f"➡️ {SWIPE_PROMPT}")
     ig.append(f"💬 {CTA}")
+    ig.append(f"📌 {SAVE_PROMPT}")
     instagram = "\n".join(ig)
 
     th = []
@@ -145,6 +174,7 @@ def build_captions(listing):
         tk.append(hook)
     if myr_s:
         tk.append(myr_s + (f" · {facts}" if facts else ""))
+    tk.append(f"➡️ {SWIPE_PROMPT}")
     tk.append(CTA)
     tiktok = "\n".join(tk)
 
