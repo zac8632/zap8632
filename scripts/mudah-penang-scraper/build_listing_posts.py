@@ -151,27 +151,6 @@ def find_ad_node(obj, list_id, _depth=0):
     return None
 
 
-def _urls_from(value):
-    """Pull image URLs out of whatever shape a media field takes (list of
-    strings, list of dicts with url/src/link/original/full keys, or nested)."""
-    out = []
-    if isinstance(value, str):
-        if IMG_URL_RE.fullmatch(value) or IMG_URL_RE.match(value):
-            out.append(value)
-    elif isinstance(value, dict):
-        for k in ("original", "full", "large", "url", "src", "link", "image"):
-            if isinstance(value.get(k), str):
-                out.append(value[k])
-                break
-        else:
-            for v in value.values():
-                out.extend(_urls_from(v))
-    elif isinstance(value, list):
-        for item in value:
-            out.extend(_urls_from(item))
-    return out
-
-
 def extract_image_urls(detail_html, list_id, debug_path=None):
     """Collect the ad's photo URLs from the detail-page JSON, upsized to
     full-res. Falls back to scanning the raw HTML. Writes a debug dump (raw
