@@ -2,16 +2,15 @@
 """
 Stage 2 content builder for the penang-listing-posts skill.
 
-Two jobs, both deterministic (no LLM, no API key, no hallucination — every word
-comes from the listing's own fields/text):
+  build_captions(listing)   -> per-platform captions (raw, native, no hashtags,
+                               soft CTA, no contact info).
+  render_creatives(...)      -> clean overlay creatives in the @propertyluxemalaysia
+                               style: full-bleed real photo, vertical project name
+                               on the left, location + spec pill bottom-left, subtle
+                               bottom scrim, optional small wordmark. Crops to 4:5
+                               and 9:16.
 
-  build_captions(listing)  -> per-platform captions (raw, native, no hashtags,
-                              soft CTA, no contact info).
-  render_creatives(...)     -> RAW NATIVE images: smart-crop each real photo to
-                              4:5 and 9:16, optionally composite ONE minimal
-                              price/area tag on the first photo. No posters.
-
-Run standalone to preview captions against the scrape without any photos:
+Preview captions against the scrape (no photos needed):
     python post_content.py --input penang_owners.xlsx --demo 5
 """
 
@@ -20,8 +19,15 @@ import os
 import re
 import sys
 
-# Approx FX (mirror context.md; refresh periodically).
 FX = {"usd": 0.213, "sgd": 0.287}
+
+# Optional small wordmark shown top-centre. Empty = nothing (user has no logo).
+WORDMARK = ""
+
+# Coastal Luxe
+NAVY = (10, 37, 64)
+AZURE = (16, 130, 189)
+WHITE = (255, 255, 255)
 
 
 def price_num(v):
@@ -41,7 +47,6 @@ def _approx(myr, rate):
 
 
 def price_lines(myr):
-    """('RM 1,830,000', '≈ USD 390k / SGD 525k approx.') or (None, None)."""
     if not myr:
         return None, None
     myr_s = f"RM {int(myr):,}"
@@ -58,48 +63,62 @@ def _clean(v):
     return s or None
 
 
-def hook_from(listing):
-    """Use the owner's own words: the Title, tidied. Never invented."""
+def project_name(listing):
+    """The building/project name for the vertical label: the Title minus the
+    trailing area. Owner's own words."""
     title = _clean(listing.get("Title")) or ""
     area = _clean(listing.get("Location")) or ""
-    # Titles often end with ", <Area>" — drop the redundant tail for the hook.
     if area and title.lower().rstrip(".").endswith(area.lower()):
         title = title[: title.lower().rfind(area.lower())].strip().strip(",")
     return title or area
 
 
-def facts_line(listing):
-    bits = []
-    area = _clean(listing.get("Location"))
-    if area:
-        bits.append(area)
+def spec_str(listing):
+    parts = []
     bd = _clean(listing.get("Bedrooms"))
     ba = _clean(listing.get("Bathrooms"))
-    if bd:
-        bits.append(f"{bd} bed")
-    if ba:
-        bits.append(f"{ba} bath")
     sz = _clean(listing.get("Size (sqft)"))
+    if bd:
+        parts.append(f"{bd} Beds")
+    if ba:
+        parts.append(f"{ba} Baths")
     if sz:
-        bits.append(f"{sz} sqft")
+        parts.append(f"{sz} sqft")
+    return "  |  ".join(parts)
+
+
+def facts_line(listing):
+    bits = []
+    for label, key in (("", "Location"),):
+        pass
+    area = _clean(listing.get("Location"))
+    bd = _clean(listing.get("Bedrooms"))
+    ba = _clean(listing.get("Bathrooms"))
+    sz = _clean(listing.get("Size (sqft)"))
     tn = _clean(listing.get("Tenure"))
+    out = []
+    if area:
+        out.append(area)
+    if bd:
+        out.append(f"{bd} bed")
+    if ba:
+        out.append(f"{ba} bath")
+    if sz:
+        out.append(f"{sz} sqft")
     if tn:
-        bits.append(tn)
-    return " · ".join(bits)
+        out.append(tn)
+    return " · ".join(out)
 
 
 CTA = "DM to arrange a viewing"
 
 
 def build_captions(listing):
-    """Return {platform: caption}. Raw/native tone, facts only, no hashtags,
-    no contact info. Blank fields are simply omitted."""
-    hook = hook_from(listing)
+    hook = project_name(listing)
     facts = facts_line(listing)
     myr_s, approx = price_lines(price_num(listing.get("Price (RM)")))
     price_block = myr_s + (f"\n{approx}" if approx else "") if myr_s else ""
 
-    # Instagram feed — a few lines, front-loaded, minimal emoji.
     ig = []
     if hook:
         ig.append(hook)
@@ -110,7 +129,6 @@ def build_captions(listing):
     ig.append(f"💬 {CTA}")
     instagram = "\n".join(ig)
 
-    # Threads — conversational, no emoji.
     th = []
     if hook:
         th.append(hook + ".")
@@ -122,7 +140,6 @@ def build_captions(listing):
     th.append(f"{CTA}.")
     threads = " ".join(th)
 
-    # TikTok — punchy, short.
     tk = []
     if hook:
         tk.append(hook)
@@ -131,45 +148,86 @@ def build_captions(listing):
     tk.append(CTA)
     tiktok = "\n".join(tk)
 
-    # Instagram Story — minimal (creative already shows price).
     story = f"{hook}\n{CTA}" if hook else CTA
 
-    # WhatsApp status — one glance.
     wa_bits = [b for b in [_clean(listing.get("Location")), myr_s] if b]
     whatsapp = " · ".join(wa_bits) + f"\n{CTA}" if wa_bits else CTA
 
-    return {
-        "instagram": instagram,
-        "threads": threads,
-        "tiktok": tiktok,
-        "story": story,
-        "whatsapp": whatsapp,
-    }
+    return {"instagram": instagram, "threads": threads, "tiktok": tiktok,
+            "story": story, "whatsapp": whatsapp}
 
 
-# ---- RAW NATIVE creatives (Pillow) — runs in the Action where photos exist ----
+# ------------------------------ creatives ------------------------------
 
-def _smart_crop(img, ratio_w, ratio_h):
-    from PIL import Image
+def _smart_crop(img, rw, rh):
     w, h = img.size
-    target = ratio_w / ratio_h
+    target = rw / rh
     cur = w / h
-    if cur > target:               # too wide -> crop sides
-        new_w = int(h * target)
-        left = (w - new_w) // 2
-        return img.crop((left, 0, left + new_w, h))
-    else:                          # too tall -> crop top/bottom (bias slightly up)
-        new_h = int(w / target)
-        top = int((h - new_h) * 0.4)
-        return img.crop((0, top, w, top + new_h))
+    if cur > target:
+        nw = int(h * target)
+        left = (w - nw) // 2
+        return img.crop((left, 0, left + nw, h))
+    nh = int(w / target)
+    top = int((h - nh) * 0.4)
+    return img.crop((0, top, w, top + nh))
+
+
+def _font(size, bold=False):
+    from PIL import ImageFont
+    cands = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold
+        else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/Library/Fonts/Arial.ttf",
+    ]
+    for p in cands:
+        if os.path.exists(p):
+            return ImageFont.truetype(p, size)
+    return ImageFont.load_default()
+
+
+def _bottom_scrim(base):
+    from PIL import Image
+    W, H = base.size
+    start = int(H * 0.55)
+    grad = Image.new("L", (1, H), 0)
+    px = grad.load()
+    for y in range(H):
+        px[0, y] = 0 if y < start else int(205 * (y - start) / max(1, H - start))
+    alpha = grad.resize((W, H))
+    dark = Image.new("RGBA", (W, H), NAVY + (255,))
+    dark.putalpha(alpha)
+    return Image.alpha_composite(base.convert("RGBA"), dark)
+
+
+def _vertical_label(text, size):
+    from PIL import Image, ImageDraw
+    font = _font(size)
+    spaced = " ".join(text.upper())  # airy letter-spacing like the reference
+    tmp = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    b = tmp.textbbox((0, 0), spaced, font=font)
+    tw, th = b[2] - b[0], b[3] - b[1]
+    layer = Image.new("RGBA", (tw + 20, th + 20), (0, 0, 0, 0))
+    ImageDraw.Draw(layer).text((10 - b[0], 10 - b[1]), spaced, font=font,
+                               fill=(255, 255, 255, 235))
+    return layer.rotate(90, expand=True)
+
+
+def _pill(img, x, y, text, size):
+    from PIL import ImageDraw
+    draw = ImageDraw.Draw(img, "RGBA")
+    font = _font(size, bold=True)
+    b = draw.textbbox((0, 0), text, font=font)
+    tw, th = b[2] - b[0], b[3] - b[1]
+    padx, pady = int(size * 0.7), int(size * 0.5)
+    draw.rounded_rectangle([x, y, x + tw + padx * 2, y + th + pady * 2],
+                           radius=int((th + pady * 2) / 2), fill=AZURE + (235,))
+    draw.text((x + padx - b[0], y + pady - b[1]), text, font=font, fill=WHITE)
+    return y + th + pady * 2
 
 
 def render_creatives(photo_paths, listing, out_dir, tag=True):
-    """Crop the real photos to 4:5 and 9:16. On the FIRST photo optionally
-    composite one minimal price/area tag (bottom-left). No posters. Returns
-    {'4x5': [...], '9x16': [...]}."""
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw
     except ImportError:
         print("Pillow not installed (pip install pillow) — skipping render.", file=sys.stderr)
         return {"4x5": [], "9x16": []}
@@ -177,42 +235,59 @@ def render_creatives(photo_paths, listing, out_dir, tag=True):
     os.makedirs(out_dir, exist_ok=True)
     myr_s, _ = price_lines(price_num(listing.get("Price (RM)")))
     area = _clean(listing.get("Location"))
+    proj = project_name(listing)
+    specs = spec_str(listing)
+
     out = {"4x5": [], "9x16": []}
-    specs = {"4x5": (1080, 1350, 4, 5), "9x16": (1080, 1920, 9, 16)}
+    sizes = {"4x5": (1080, 1350, 4, 5, 70), "9x16": (1080, 1920, 9, 16, 330)}
 
-    def load_font(size):
-        for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-                  "/Library/Fonts/Arial Bold.ttf"):
-            if os.path.exists(p):
-                return ImageFont.truetype(p, size)
-        return ImageFont.load_default()
-
-    for key, (W, H, rw, rh) in specs.items():
+    for key, (W, H, rw, rh, bottom_ui) in sizes.items():
         for i, ph in enumerate(photo_paths):
             try:
                 img = Image.open(ph).convert("RGB")
             except Exception as e:
                 print(f"  [render] skip {ph}: {e}", file=sys.stderr)
                 continue
-            crop = _smart_crop(img, rw, rh).resize((W, H), Image.LANCZOS)
-            if tag and i == 0 and myr_s:
-                draw = ImageDraw.Draw(crop, "RGBA")
-                fs = int(H * 0.045)
-                font = load_font(fs)
-                pad = int(W * 0.04)
-                lines = [myr_s] + ([area] if area else [])
-                # low-opacity strip behind just the text, not the whole image
-                tw = max(draw.textlength(l, font=load_font(fs if j == 0 else int(fs*0.6)))
-                         for j, l in enumerate(lines))
-                bh = int(fs * (1.5 * len(lines) + 0.6))
-                draw.rectangle([0, H - bh - pad, tw + pad*2, H], fill=(10, 37, 64, 150))
-                y = H - bh - pad + int(fs*0.3)
-                draw.text((pad, y), myr_s, font=font, fill=(255, 255, 255, 255))
+            base = _smart_crop(img, rw, rh).resize((W, H), Image.LANCZOS)
+
+            if tag and i == 0:
+                canvas = _bottom_scrim(base)
+                margin = int(W * 0.055)
+                # vertical project name, left edge
+                if proj:
+                    vlabel = _vertical_label(proj[:22], int(W * 0.05))
+                    canvas.alpha_composite(vlabel, (int(W * 0.015),
+                                                    int(H * 0.10)))
+                # bottom-left stack: price, location, spec pill
+                draw = ImageDraw.Draw(canvas, "RGBA")
+                y = H - bottom_ui
+                block_h = 0
+                if myr_s:
+                    block_h += int(W * 0.075) + 12
                 if area:
-                    draw.text((pad, y + int(fs*1.4)), area,
-                              font=load_font(int(fs*0.6)), fill=(230, 236, 243, 255))
+                    block_h += int(W * 0.042) + 10
+                if specs:
+                    block_h += int(W * 0.07)
+                y = H - bottom_ui - block_h
+                if myr_s:
+                    f = _font(int(W * 0.075), bold=True)
+                    draw.text((margin, y), myr_s, font=f, fill=WHITE)
+                    y += int(W * 0.075) + 12
+                if area:
+                    f = _font(int(W * 0.042))
+                    draw.text((margin, y), area, font=f, fill=(235, 240, 245, 255))
+                    y += int(W * 0.042) + 10
+                if specs:
+                    _pill(canvas, margin, y, specs, int(W * 0.033))
+                if WORDMARK:
+                    f = _font(int(W * 0.032), bold=True)
+                    b = draw.textbbox((0, 0), WORDMARK, font=f)
+                    draw.text(((W - (b[2] - b[0])) / 2, int(H * 0.03)),
+                              WORDMARK, font=f, fill=(255, 255, 255, 230))
+                base = canvas.convert("RGB")
+
             fn = os.path.join(out_dir, f"{key}_{i+1:02d}.jpg")
-            crop.save(fn, quality=90)
+            base.save(fn, quality=92)
             out[key].append(fn)
     return out
 
@@ -221,21 +296,18 @@ def main():
     import pandas as pd
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--input", default="penang_owners.xlsx")
-    ap.add_argument("--demo", type=int, default=5, help="Preview captions for N qualifying listings.")
+    ap.add_argument("--demo", type=int, default=5)
     args = ap.parse_args()
 
-    from build_listing_posts import qualifies  # reuse the Stage 1 filter
+    from build_listing_posts import qualifies
     df = pd.read_excel(args.input, sheet_name="All Listings", dtype=str)
     q = df[df.apply(qualifies, axis=1)]
-    print(f"{len(q)} qualifying; showing captions for {min(args.demo, len(q))}:\n", file=sys.stderr)
+    print(f"{len(q)} qualifying; captions for {min(args.demo, len(q))}:\n", file=sys.stderr)
     for _, row in q.head(args.demo).iterrows():
         caps = build_captions(row)
-        print("=" * 66)
+        print("=" * 60)
         print(f"{row.get('Title')}  |  {row.get('Price')}")
-        print("-" * 66)
-        print("[Instagram]\n" + caps["instagram"])
-        print("\n[Threads] " + caps["threads"])
-        print("\n[WhatsApp] " + caps["whatsapp"].replace("\n", " / "))
+        print(caps["instagram"])
         print()
 
 

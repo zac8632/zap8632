@@ -92,8 +92,44 @@ def extract_list_id(url):
 # ---- Image extraction from the detail page -------------------------------
 
 NEXT_DATA_RE = re.compile(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', re.DOTALL)
-# mudah serves listing photos off its image CDN; capture full-size jpg/webp URLs.
-IMG_URL_RE = re.compile(r'https?://[^"\'\\ ]+?\.(?:jpg|jpeg|png|webp)', re.IGNORECASE)
+# mudah (OLX/Carousell group) serves photos via the Apollo CDN, where the size is
+# baked into the URL as ";s=WxH". Capture any http string, then filter to photo
+# URLs and upsize the Apollo size token to full-res (avoids the small watermarked
+# thumbnails).
+URL_RE = re.compile(r'https?://[^\s"\'\\<>)]+', re.IGNORECASE)
+APOLLO_SIZE_RE = re.compile(r';s=\d+x\d+', re.IGNORECASE)
+_BAD = ("sprite", "logo", "icon", ".svg", "placeholder", "avatar", "favicon", "flag", "sprites")
+
+
+def _is_photo_url(u):
+    ul = u.lower()
+    if any(b in ul for b in _BAD):
+        return False
+    return ("apollo" in ul or "akamaized" in ul or ";s=" in ul
+            or re.search(r"\.(?:jpg|jpeg|png|webp)(?:\?|;|$)", ul))
+
+
+def _upsize(u):
+    # request a large size instead of the thumbnail mudah shows by default.
+    return APOLLO_SIZE_RE.sub(";s=1600x1200", u)
+
+
+def _base_key(u):
+    return APOLLO_SIZE_RE.sub("", u.split("?")[0])
+
+
+def _all_strings(obj, out, depth=0):
+    if depth > 14:
+        return
+    if isinstance(obj, str):
+        if obj.startswith("http"):
+            out.append(obj)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            _all_strings(v, out, depth + 1)
+    elif isinstance(obj, list):
+        for v in obj:
+            _all_strings(v, out, depth + 1)
 
 
 def find_ad_node(obj, list_id, _depth=0):
@@ -136,11 +172,12 @@ def _urls_from(value):
     return out
 
 
-def extract_image_urls(detail_html, list_id):
-    """Best-effort: prefer structured media fields on the ad node; fall back to
-    scanning the whole payload for CDN image URLs. Returns de-duped list in
-    document order. The first real Action run will confirm which path hits."""
-    urls = []
+def extract_image_urls(detail_html, list_id, debug_path=None):
+    """Collect the ad's photo URLs from the detail-page JSON, upsized to
+    full-res. Falls back to scanning the raw HTML. Writes a debug dump (raw
+    media sample + resolved URLs) when debug_path is given so we can verify the
+    CDN pattern on the first run."""
+    found, raw_media = [], None
     m = NEXT_DATA_RE.search(detail_html)
     if m:
         try:
@@ -148,32 +185,41 @@ def extract_image_urls(detail_html, list_id):
             node = find_ad_node(nd, list_id) or {}
             attrs = node.get("attributes", node) if isinstance(node, dict) else {}
             for key in ("images", "media", "photos", "gallery", "image"):
-                if attrs.get(key):
-                    urls.extend(_urls_from(attrs[key]))
-            if not urls:
-                # nothing under the obvious keys - scan the ad node wholesale
-                urls.extend(_urls_from(node))
+                if attrs.get(key) is not None and raw_media is None:
+                    raw_media = {key: attrs.get(key)}
+            strs = []
+            _all_strings(node, strs)
+            found = [u for u in strs if _is_photo_url(u)]
         except Exception as e:
             print(f"  [images] {list_id}: JSON parse failed ({e}); regex fallback", file=sys.stderr)
-    if not urls:
-        urls = IMG_URL_RE.findall(detail_html)
-    # de-dupe preserving order; drop obvious non-listing assets (icons/logos)
-    seen, clean = set(), []
-    for u in urls:
-        if u in seen:
+    if not found:
+        found = [u for u in URL_RE.findall(detail_html) if _is_photo_url(u)]
+
+    seen, ordered = set(), []
+    for u in found:
+        up = _upsize(u)
+        k = _base_key(up)
+        if k in seen:
             continue
-        if re.search(r"(sprite|logo|icon|placeholder|avatar)", u, re.IGNORECASE):
-            continue
-        seen.add(u)
-        clean.append(u)
-    return clean
+        seen.add(k)
+        ordered.append(up)
+
+    if debug_path:
+        try:
+            with open(debug_path, "w") as f:
+                json.dump({"list_id": list_id, "count": len(ordered),
+                           "raw_media_sample": raw_media, "urls": ordered[:20]},
+                          f, indent=2, default=str)
+        except Exception:
+            pass
+    return ordered
 
 
 def polite_sleep(a=1.0, b=2.0):
     time.sleep(random.uniform(a, b))
 
 
-def fetch_and_download(session, row, out_dir):
+def fetch_and_download(session, row, out_dir, debug=False):
     url = row.get("Listing URL", "")
     list_id = extract_list_id(url)
     if not list_id:
@@ -187,8 +233,11 @@ def fetch_and_download(session, row, out_dir):
         print(f"  [detail] {url}: HTTP {r.status_code}", file=sys.stderr)
         return None
 
-    img_urls = extract_image_urls(r.text, list_id)
     listing_dir = os.path.join(out_dir, list_id)
+    os.makedirs(listing_dir, exist_ok=True)
+    img_urls = extract_image_urls(
+        r.text, list_id,
+        debug_path=os.path.join(listing_dir, "debug_images.json") if debug else None)
     photos_dir = os.path.join(listing_dir, "photos")
     os.makedirs(photos_dir, exist_ok=True)
 
@@ -294,8 +343,8 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     done = 0
-    for _, r in q.iterrows():
-        if fetch_and_download(session, r, args.out):
+    for idx, (_, r) in enumerate(q.iterrows()):
+        if fetch_and_download(session, r, args.out, debug=(idx == 0)):
             done += 1
         polite_sleep()
     print(f"Downloaded photos for {done}/{len(q)} qualifying listings into {args.out}/", file=sys.stderr)
