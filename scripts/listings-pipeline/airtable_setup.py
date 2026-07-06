@@ -48,6 +48,7 @@ MASTER_LISTINGS_FIELDS = [
     {"name": "Listing URL", "type": "url"},
     {"name": "listId", "type": "singleLineText"},
     {"name": "Description", "type": "multilineText"},
+    {"name": "Caption", "type": "multilineText"},
     {"name": "Mark for Marketing", "type": "checkbox",
      "options": {"icon": "check", "color": "greenBright"}},
 ]

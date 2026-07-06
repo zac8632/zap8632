@@ -74,6 +74,11 @@ TENURE_RE = re.compile(r"\b(freehold|leasehold)\b", re.IGNORECASE)
 FURNISHING_RE = re.compile(r"furnish(?:ed|ing)?\s*[:：]\s*([A-Za-z]+)", re.IGNORECASE)
 FACING_RE = re.compile(r"facing\s*[:：]\s*([A-Za-z]+)", re.IGNORECASE)
 RENT_RE = re.compile(r"\b(for rent|to let|rental)\b", re.IGNORECASE)
+# Sent by the user once they're done forwarding photos/text for one listing -
+# finalizes that chat's batch immediately instead of waiting for the idle
+# timer. Matches on its own line/message so it can't accidentally trigger
+# mid-sentence in a real listing description.
+CONFIRM_RE = re.compile(r"^\s*(done|confirm|confirmed|ready|go|✅|👍)\s*[.!]?\s*$", re.IGNORECASE)
 # Generic banner lines ("FOR SALE!!", "HOT LISTING") that aren't useful as a
 # Title - skip these when picking the first line, they carry no project info.
 BANNER_LINE_RE = re.compile(
@@ -232,6 +237,15 @@ def tg_call(token, method, params=None, timeout=30):
     return data["result"]
 
 
+def tg_send_message(token, chat_id, text):
+    """Best-effort reply back to the user - a failed send should never break
+    ingestion, just gets logged."""
+    try:
+        tg_call(token, "sendMessage", {"chat_id": chat_id, "text": text})
+    except Exception as e:
+        print(f"  [telegram] failed to send confirmation message: {e}", file=sys.stderr)
+
+
 def download_telegram_file(token, file_id, out_path):
     file_info = tg_call(token, "getFile", {"file_id": file_id})
     file_path = file_info["file_path"]
@@ -285,16 +299,26 @@ def poll_and_buffer(token, state):
 
         batch = pending.setdefault(chat_id, {
             "first_msg_time": time.time(), "last_msg_time": time.time(),
-            "texts": [], "photo_file_ids": [],
+            "texts": [], "photo_file_ids": [], "confirmed": False,
         })
-        batch["last_msg_time"] = time.time()
 
         text = msg.get("text") or msg.get("caption")
-        if text:
-            batch["texts"].append(text)
-        if msg.get("photo"):
-            largest = max(msg["photo"], key=lambda p: p["width"])
-            batch["photo_file_ids"].append(largest["file_id"])
+        if text and CONFIRM_RE.match(text) and (batch["texts"] or batch["photo_file_ids"]):
+            # A confirm signal on an EMPTY batch is just noise (nothing to
+            # confirm yet) - only finalize a batch that actually has content.
+            batch["confirmed"] = True
+            tg_send_message(
+                token, chat_id,
+                f"Got it - {len(batch['photo_file_ids'])} photo(s) and "
+                f"{len(batch['texts'])} text message(s) received. Processing "
+                f"this listing now, no need to send anything else for it.")
+        else:
+            if text:
+                batch["texts"].append(text)
+            if msg.get("photo"):
+                largest = max(msg["photo"], key=lambda p: p["width"])
+                batch["photo_file_ids"].append(largest["file_id"])
+        batch["last_msg_time"] = time.time()
 
     return state
 
@@ -309,7 +333,7 @@ def process_batches(token, state, out_dir, dry_run=False):
     finalized = []
 
     for chat_id, batch in list(pending.items()):
-        if now - batch["last_msg_time"] <= BATCH_IDLE_SECONDS:
+        if not batch.get("confirmed") and now - batch["last_msg_time"] <= BATCH_IDLE_SECONDS:
             continue
 
         text = "\n".join(batch["texts"])
@@ -513,6 +537,11 @@ def main():
                 f.write(f"## {plat}\n\n{txt}\n\n")
         print(f"  [ok] {listing['_batch_id']}: {len(curated_paths)} photos curated, "
               f"creatives + captions written", file=sys.stderr)
+        tg_send_message(
+            token, listing["_chat_id"],
+            f"Done - '{listing.get('Title') or listing['_batch_id']}' is ready: "
+            f"{len(curated_paths)} photos curated, creatives + captions written. "
+            f"It'll show up in Airtable shortly.")
 
 
 if __name__ == "__main__":
