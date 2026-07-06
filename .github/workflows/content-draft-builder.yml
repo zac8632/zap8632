@@ -33,7 +33,7 @@ jobs:
       - name: Install dependencies
         working-directory: scripts/listings-pipeline
         run: |
-          pip install curl_cffi pandas openpyxl pillow numpy scipy
+          pip install curl_cffi pandas openpyxl pillow numpy scipy opencv-python-headless
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install transformers
 
@@ -96,24 +96,20 @@ jobs:
               mask, color, confidence = wc.load_template("posts_input/watermark_template.npz")
               preview_dir = "posts_input/watermark_preview"
               os.makedirs(preview_dir, exist_ok=True)
-              # User feedback: "local" mode (box-blur blend) still reads as a
-              # blur smear and the mudah wordmark/logo icon are still visible -
-              # dropping "local" entirely and pushing much harder on the
-              # calibrated cross-photo color (and a hybrid) instead, since
-              # that's a real pixel estimate from many OTHER photos, not a
-              # blurred version of this one - it won't look like a blur even
-              # at high strength. Mask also widened (25 -> 32 percentile) to
-              # make sure the building-icon graphic is covered, not just the
-              # text. Test both a strong-but-not-total blend (0.85) and a
-              # full replacement (1.0) so we can see if full replacement
-              # introduces a visible flat patch despite the feathered edges.
+              # User feedback: still visible at strength 0.6 on the old
+              # local-blur method, and wants a genuinely different approach
+              # tried, not just parameter tuning. Adding OpenCV inpainting
+              # (Telea and Navier-Stokes) alongside the calibrated/hybrid
+              # blend - inpainting propagates real texture/edges inward from
+              # the mask boundary instead of blending toward one flat/blurred
+              # estimate, so it may hide the logo/text more convincingly on
+              # textured surfaces than a flat-color or blurred patch can.
               for i, p in enumerate(paths[:2]):
-                  for mode in ("calibrated", "hybrid"):
-                      for strength in (0.85, 1.0):
-                          out = os.path.join(preview_dir, f"suppressed_{i}_{mode}_{strength}.jpg")
-                          wc.suppress_watermark(p, mask, color, confidence, strength=strength,
-                                                 out_path=out, target_mode=mode)
-                          print(f"  wrote {out} from {p}")
+                  for mode in ("calibrated", "hybrid", "inpaint_telea", "inpaint_ns"):
+                      out = os.path.join(preview_dir, f"suppressed_{i}_{mode}.jpg")
+                      wc.suppress_watermark(p, mask, color, confidence, strength=1.0,
+                                             out_path=out, target_mode=mode)
+                      print(f"  wrote {out} from {p}")
           PY
 
       - name: Upload posts_input for inspection

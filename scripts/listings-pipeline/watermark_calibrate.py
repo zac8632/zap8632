@@ -125,6 +125,11 @@ def suppress_watermark(img_path, mask, color, confidence, strength=0.6,
          contaminated pixels - but it can mismatch this specific photo's
          lighting/color cast since it's a fixed value.
        - "hybrid": average of the two, trading off both risks.
+       - "inpaint_telea" / "inpaint_ns": a different mechanism altogether -
+         OpenCV's inpainting (Telea or Navier-Stokes algorithm) propagates
+         structure/texture inward from the mask boundary instead of
+         blending toward one flat/blurred estimate, so it can follow real
+         edges and grain instead of reading as a patch.
     2. The blend strength is no longer uniform across the whole mask -
        it's scaled per-pixel by `confidence` (how sure calibration was that
        this exact pixel is watermark, not content) and that confidence map
@@ -150,6 +155,19 @@ def suppress_watermark(img_path, mask, color, confidence, strength=0.6,
         target = color
     elif target_mode == "hybrid":
         target = 0.5 * local_avg + 0.5 * color
+    elif target_mode in ("inpaint_telea", "inpaint_ns"):
+        # Different mechanism entirely: instead of blending toward any single
+        # flat/blurred estimate, let OpenCV's inpainting algorithm synthesize
+        # texture by propagating structure inward from the mask's boundary -
+        # this can follow real edges/gradients (wall lines, floor grain)
+        # instead of leaving a flat-looking patch, which is what both the
+        # local-blur and calibrated-color blends risk on textured surfaces.
+        import cv2
+        flag = cv2.INPAINT_TELEA if target_mode == "inpaint_telea" else cv2.INPAINT_NS
+        bgr = cv2.cvtColor(np.clip(arr, 0, 255).astype(np.uint8), cv2.COLOR_RGB2BGR)
+        inpaint_mask = (mask.astype(np.uint8)) * 255
+        inpainted_bgr = cv2.inpaint(bgr, inpaint_mask, 7, flag)
+        target = cv2.cvtColor(inpainted_bgr, cv2.COLOR_BGR2RGB).astype(np.float64)
     else:
         raise ValueError(f"unknown target_mode: {target_mode!r}")
 

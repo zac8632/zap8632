@@ -167,7 +167,13 @@ def extract_image_urls(detail_html, list_id, debug_path=None):
                 if attrs.get(key) is not None and raw_media is None:
                     raw_media = {key: attrs.get(key)}
             strs = []
-            _all_strings(node, strs)
+            # Scope the search to the actual gallery field when we found one,
+            # instead of the whole ad node - scanning the whole node can pick
+            # up unrelated small images living elsewhere in the same JSON
+            # (seller avatar, nested related-ads blocks) alongside the real
+            # gallery, which is exactly the kind of small/irrelevant
+            # thumbnail that shouldn't end up in the listing's photo set.
+            _all_strings(raw_media if raw_media is not None else node, strs)
             found = [u for u in strs if _is_photo_url(u)]
         except Exception as e:
             print(f"  [images] {list_id}: JSON parse failed ({e}); regex fallback", file=sys.stderr)
@@ -294,6 +300,13 @@ def fetch_and_download(session, row, out_dir, debug=False):
         print(f"  [probe] testing URL variants for photo 1 of {list_id}...", file=sys.stderr)
         _probe_url_variants(session, img_urls[0], os.path.join(probe_dir, "photo1"))
 
+    # Real mudah gallery photos come back at 360x480 (confirmed via a live
+    # probe - no larger version exists at this CDN). This threshold is well
+    # below that, so it only catches genuinely tiny stray images (seller
+    # avatars, icons) that slipped past the gallery-field scoping above, not
+    # real listing photos.
+    MIN_PHOTO_DIM = 150
+
     saved = []
     for i, iu in enumerate(img_urls[:15], 1):
         try:
@@ -303,6 +316,18 @@ def fetch_and_download(session, row, out_dir, debug=False):
                 fn = os.path.join(photos_dir, f"{i:02d}{ext}")
                 with open(fn, "wb") as f:
                     f.write(ir.content)
+                try:
+                    from PIL import Image
+                    with Image.open(fn) as im:
+                        w, h = im.size
+                    if w < MIN_PHOTO_DIM or h < MIN_PHOTO_DIM:
+                        print(f"  [img] skipping {iu}: too small ({w}x{h}), "
+                              f"likely a stray icon/avatar not a listing photo",
+                              file=sys.stderr)
+                        os.remove(fn)
+                        continue
+                except Exception:
+                    pass
                 saved.append(os.path.relpath(fn, out_dir))
         except Exception as e:
             print(f"  [img] {iu}: {e}", file=sys.stderr)
