@@ -819,12 +819,19 @@ def price_to_number(raw):
     return float(digits) if digits else None
 
 
-def sync_to_gsheet(df, gsheet_id, gsheet_key, tab_name):
+def sync_to_gsheet(df, gsheet_id, gsheet_key, tab_name, preserve_columns=None, key_column="Listing URL"):
     """Push a DataFrame straight into a tab of a live Google Sheet (create
     the tab if it doesn't exist yet, otherwise wipe and replace its
     contents with this run's data). Requires a service-account JSON key
     that's been shared with Editor access on the target sheet - see the
     --gsheet-key/--gsheet-id help text.
+
+    preserve_columns: column names the USER edits by hand in the live Sheet
+    (e.g. "Mark for Marketing") - since this function wipes and rewrites the
+    whole tab every run, those manual edits would otherwise be silently lost
+    on the next scrape. When set, reads the tab's CURRENT values for those
+    columns (keyed by key_column) before clearing, and carries them forward
+    into the fresh data.
 
     Uses value_input_option="RAW" rather than "USER_ENTERED" - the latter
     auto-parses numeric-looking strings into actual numbers, which would
@@ -844,11 +851,30 @@ def sync_to_gsheet(df, gsheet_id, gsheet_key, tab_name):
         print(f"Could not connect to Google Sheet {gsheet_id}: {e}", file=sys.stderr)
         return
 
+    existing_by_key = {}
     try:
         ws = sh.worksheet(tab_name)
+        if preserve_columns and key_column in df.columns:
+            try:
+                existing_records = ws.get_all_records()
+                for rec in existing_records:
+                    k = rec.get(key_column)
+                    if k:
+                        existing_by_key[k] = {c: rec.get(c, "") for c in preserve_columns}
+            except Exception as e:
+                print(f"  [warn] could not read existing '{tab_name}' values to preserve "
+                      f"{preserve_columns}: {e}", file=sys.stderr)
         ws.clear()
     except gspread.WorksheetNotFound:
         ws = sh.add_worksheet(title=tab_name, rows=max(len(df) + 10, 100), cols=max(len(df.columns) + 2, 20))
+
+    if existing_by_key:
+        for col in preserve_columns:
+            if col in df.columns:
+                df[col] = df[key_column].map(lambda k: existing_by_key.get(k, {}).get(col, ""))
+        carried = sum(1 for k in df[key_column] if k in existing_by_key)
+        print(f"  carried forward {preserve_columns} for {carried} existing rows in '{tab_name}'",
+              file=sys.stderr)
 
     safe_df = df.where(pd.notna(df), "")
     values = [list(safe_df.columns)] + safe_df.values.tolist()
@@ -953,6 +979,12 @@ def main():
     focus_df = build_focus_area_df(df)
     if len(focus_df):
         focus_df["No."] = range(1, len(focus_df) + 1)
+    # User-editable in the live Sheet's Focus Area tab - hand-pick which
+    # listings to push into the CRM beyond whatever auto-qualifies elsewhere.
+    # Defaults blank; sync_to_gsheet() carries forward any value the user has
+    # already set so a re-scrape never wipes it (see preserve_columns there).
+    focus_df["Mark for Marketing"] = ""
+    focus_df["Synced to CRM"] = ""
 
     new_df = None
     with pd.ExcelWriter(args.output, engine="openpyxl") as writer:
@@ -985,7 +1017,8 @@ def main():
         sync_to_gsheet(df, args.gsheet_id, args.gsheet_key, "All Listings")
         if new_df is not None:
             sync_to_gsheet(new_df, args.gsheet_id, args.gsheet_key, "New Listings")
-        sync_to_gsheet(focus_df, args.gsheet_id, args.gsheet_key, "Focus Area")
+        sync_to_gsheet(focus_df, args.gsheet_id, args.gsheet_key, "Focus Area",
+                       preserve_columns=["Mark for Marketing", "Synced to CRM"])
         sync_to_gsheet(summary_by_area_df, args.gsheet_id, args.gsheet_key, "Summary by Area")
         sync_to_gsheet(summary_df, args.gsheet_id, args.gsheet_key, "Summary")
     elif args.gsheet_id or args.gsheet_key:
