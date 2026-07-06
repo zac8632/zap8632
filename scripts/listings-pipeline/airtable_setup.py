@@ -131,11 +131,18 @@ def main():
         print("My Pipeline already exists - skipping creation.")
     else:
         print("Creating My Pipeline...")
-        fields = [{
-            "name": "Listing",
-            "type": "multipleRecordLinks",
-            "options": {"linkedTableId": master["id"]},
-        }] + MY_PIPELINE_FIELDS_TEMPLATE
+        # Airtable requires a table's first (primary) field to be a plain
+        # field type - a multipleRecordLinks field can't be primary, so a
+        # simple text field leads and the actual link to Master Listings
+        # comes second.
+        fields = [
+            {"name": "Lead", "type": "singleLineText"},
+            {
+                "name": "Listing",
+                "type": "multipleRecordLinks",
+                "options": {"linkedTableId": master["id"]},
+            },
+        ] + MY_PIPELINE_FIELDS_TEMPLATE
         pipeline = create_table(
             args.base_id, token, "My Pipeline", fields,
             description="Your personal follow-up tracker - status, remarks, "
