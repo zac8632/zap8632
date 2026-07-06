@@ -69,12 +69,11 @@ Notes:
   `social-automation-output/posted_registry.json` ({listId: first_posted_date}),
   same pattern as the scraper's seen-file. Skip any listId already in it.
 
-## Rendering approach (how creatives are built)
-- Creatives are rendered as **HTML/CSS → headless-Chromium screenshot**
-  (Playwright, already installed). This is the only way to hit the reference
-  quality (gradients, script fonts, stat chips, scrims) reliably — PIL/Pillow
-  can't match the samples. One HTML template per size (4:5, 9:16), fonts + icons
-  embedded, filled per listing, screenshotted at 1080-wide.
+## Rendering approach (RAW NATIVE — not posters)
+- Direction: the real photos ARE the content; we do NOT build designed posters.
+  See `style-guide.md`. Rendering is simple image ops (Pillow): smart-crop each
+  real photo to 4:5 and 9:16, and optionally composite ONE minimal price/area tag
+  on the first photo. No gradients, script fonts, stat bands, badges, or logos.
 
 ## Image source & where the skill runs
 - IMPORTANT: mudah.my is network-blocked from the Claude web/cloud environment,

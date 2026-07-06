@@ -211,6 +211,24 @@ def fetch_and_download(session, row, out_dir):
     listing["listId"] = list_id
     listing["photos"] = saved
     listing["photo_source_urls"] = img_urls[:15]
+
+    # Stage 2: raw-native creatives (crop + minimal tag) and captions.
+    try:
+        import post_content
+        abs_photos = [os.path.join(out_dir, p) for p in saved]
+        creatives = post_content.render_creatives(
+            abs_photos, row, os.path.join(listing_dir, "creatives"))
+        listing["creatives"] = {
+            k: [os.path.relpath(p, out_dir) for p in v] for k, v in creatives.items()
+        }
+        caps = post_content.build_captions(row)
+        with open(os.path.join(listing_dir, "captions.md"), "w") as f:
+            for plat, txt in caps.items():
+                f.write(f"## {plat}\n\n{txt}\n\n")
+        listing["captions"] = caps
+    except Exception as e:
+        print(f"  [content] {list_id}: {e}", file=sys.stderr)
+
     with open(os.path.join(listing_dir, "listing.json"), "w") as f:
         json.dump(listing, f, indent=2, ensure_ascii=False)
     print(f"  [ok] {list_id}: {len(saved)} photos", file=sys.stderr)

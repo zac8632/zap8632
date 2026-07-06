@@ -65,12 +65,12 @@ Per the image-integrity rule: low-res/blurry/dark photos may be
 content. Any AI-touched image is flagged `ai_enhanced = true` in Airtable so the
 reviewer approves it explicitly. Keep the look bright and clean; do not overdo it.
 
-### 4. Build the branded cover creative
-Using `style-guide.md`: one cover slide per listing with headline, the price
-(MYR primary + USD/SGD approx), and only the stat chips whose data actually
-exists (beds/baths/size/tenure — omit any that are blank). Produce a 4:5 version
-(IG/Threads feed) and a 9:16 version (TikTok/WhatsApp status). Add a final CTA
-slide.
+### 4. Build the raw-native creatives (NOT posters)
+Using `style-guide.md` (RAW NATIVE): the real photos are the content. Smart-crop
+each photo to 4:5 and 9:16. On the first photo only, optionally composite ONE
+minimal price/area tag (small, bottom-left) — no gradients, script fonts, stat
+bands, badges, or logos. No separate designed cover slide, no CTA slide. All the
+detail lives in the caption.
 
 ### 5. Write per-platform captions
 Using `caption-playbook.md`: Instagram, TikTok, Threads, WhatsApp status. Every
