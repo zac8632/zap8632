@@ -1,60 +1,87 @@
 {
   "sale:18 east @ andaman": [
+    1414.93,
     1414.93
   ],
   "sale:quayside": [
+    1055.41,
     1055.41
   ],
   "sale:single storey semi d house hillside,tanjung bungah,penang.": [
+    375.43,
     375.43
   ],
   "sale:straits quay": [
+    1929.01,
     1929.01
   ],
   "sale:springtide residences": [
+    919.36,
     919.36
   ],
   "sale:one tanjong": [
+    693.86,
     693.86
   ],
   "sale:city of dreams": [
     1035.44,
+    1603.38,
+    1035.44,
     1603.38
   ],
   "sale:lebuh presgrave": [
+    1041.67,
     1041.67
   ],
   "sale:single storey bungalow in leafy, matured neighbourhood": [
+    654.55,
     654.55
   ],
   "sale:andaman @ quayside": [
-    1123.39
+    1123.39,
+    1123.39,
+    1188.63,
+    1182.6
   ],
   "sale:city residence": [
+    804.35,
     804.35
   ],
   "rent:marina bay condominium": [
+    2.28,
     2.28
   ],
   "rent:permai jaya apartment": [
     1.57,
     1.57,
-    1.13
+    1.13,
+    1.57,
+    1.57,
+    1.13,
+    1.57,
+    1.33
   ],
   "rent:hilltop villas sea view bungalow for rent": [
+    1.48,
     1.48
   ],
   "rent:ready move in city of dream": [
+    3.33,
     3.33
   ],
   "rent:the peak residences": [
-    2.36
+    2.36,
+    2.36,
+    2.0
   ],
   "rent:kayangan puri mutiara (kpm)": [
+    1.16,
+    1.62,
     1.16,
     1.62
   ],
   "rent:i santorini condo for rent, high floor unfurnished unit": [
+    1.76,
     1.76
   ],
   "rent:fully furnished room for rent \ud83d\udecc| tanjung tokong fasa 4a": [
@@ -64,6 +91,7 @@
     7.14
   ],
   "rent:twin towers": [
+    2.04,
     2.04
   ],
   "rent:cozy single room at tg tokong near \ud83d\udd25gurney \ud83d\udd25straitsquay \ud83d\udd25adventist": [
@@ -73,26 +101,35 @@
     5.83
   ],
   "rent:shamrock beach house tanjung bungah tokong straits quay penang gurney": [
+    1.09,
     1.09
   ],
   "rent:semi detached single storey house.": [
+    0.97,
     0.97
   ],
   "rent:deluxe middle room fully furnished female unit includes internet": [
     2.17
   ],
   "rent:azuria": [
+    0.8,
     0.8
   ],
   "rent:taman bukit erskine": [
     1.91,
     1.86,
+    2.41,
+    1.91,
+    1.86,
     2.41
   ],
   "rent:leader garden": [
-    1.24
+    1.24,
+    1.24,
+    1.43
   ],
   "rent:taman seri setia": [
+    1.14,
     1.14
   ],
   "rent:puncak erskine": [
@@ -100,33 +137,57 @@
     0.82,
     1.0,
     1.15,
-    1.29
+    1.29,
+    1.15,
+    0.82,
+    1.0,
+    1.15,
+    1.29,
+    1.24,
+    1.21,
+    1.5
   ],
   "rent:i-santorini": [
-    2.47
+    2.47,
+    2.47,
+    4.0
   ],
   "rent:live4ever master room, taman kristal ~ \ud83d\udc88best deal in town\ud83c\udf08": [
     1.83
   ],
   "rent:city of dreams": [
-    2.69
+    2.69,
+    2.69,
+    3.74
   ],
   "rent:tiara view": [
+    1.36,
+    1.22,
     1.36
   ],
   "rent:tri pinnacle": [
     1.57,
     2.38,
-    2.15
+    2.15,
+    1.57,
+    2.38,
+    2.15,
+    1.54
   ],
   "rent:granito": [
     0.53
   ],
   "rent:taman kristal": [
-    2.0
+    2.0,
+    2.0,
+    1.71,
+    2.14,
+    1.71
   ],
   "rent:coastal tower": [
-    1.83
+    1.83,
+    1.83,
+    1.5
   ],
   "rent:sea facing": [
     3.2
@@ -135,21 +196,26 @@
     0.72
   ],
   "rent:uda flat": [
+    1.73,
     1.73
   ],
   "rent:e garden": [
+    1.32,
     1.32
   ],
   "rent:skyridge apartment": [
+    1.29,
     1.29
   ],
   "rent:pepper estate semi-d house for rent | fully furnished": [
+    0.54,
     0.54
   ],
   "rent:granito beside taruc": [
     0.69
   ],
   "rent:single storey house for rent near fettes park": [
+    1.85,
     1.85
   ],
   "rent:nearby gurney: middle room at taman kristal, tanjung tokong": [
@@ -162,9 +228,11 @@
     7.0
   ],
   "rent:straits quay": [
+    4.08,
     4.08
   ],
   "rent:midlands court": [
+    2.0,
     2.0
   ],
   "rent:room @ tg tokong / island glade": [
@@ -186,9 +254,58 @@
     0.71
   ],
   "rent:single storey semi d cozy house to let": [
+    0.54,
     0.54
   ],
   "rent:single storey @ tanjung tokong tanjong bungah fettes park jalan gajah.": [
+    1.22,
     1.22
+  ],
+  "sale:marriot residence in penang gurney drive": [
+    2006.27
+  ],
+  "sale:3.5 storey intermediate terrace at tanjung bungah, permai 2": [
+    395.0
+  ],
+  "sale:marinox sky villas": [
+    896.55
+  ],
+  "sale:tanjung bungah (double storey terrace) for sale": [
+    961.54
+  ],
+  "sale:permai 2": [
+    407.5
+  ],
+  "sale:3 storey terraced house gated with guard @casa permai, tanjung bungah": [
+    500.0
+  ],
+  "sale:8 gurney ( the shore )": [
+    603.45
+  ],
+  "rent:villa batu bukit": [
+    1.8
+  ],
+  "rent:gurney park": [
+    2.0,
+    2.14,
+    2.28
+  ],
+  "rent:tri pinnacle unit for rent": [
+    1.62
+  ],
+  "rent:the regency (persiaran gurney)": [
+    3.5
+  ],
+  "rent:skyridge garden @ tanjung tokong": [
+    2.28
+  ],
+  "rent:spacious 1800 sqft terrace house tanjung bungah | 3r2b": [
+    1.0
+  ],
+  "rent:seri taman tanjung": [
+    1.82
+  ],
+  "rent:taman seri tanjung": [
+    1.55
   ]
 }
