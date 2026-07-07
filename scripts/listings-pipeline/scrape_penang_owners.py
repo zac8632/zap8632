@@ -491,6 +491,14 @@ def enrich_with_details(session, rows, limit, debug_dump):
     page didn't. Mutates rows in place."""
     targets = [r for r in rows if any(not r.get(col) for col in DETAIL_FILL_COLUMNS)]
     if limit:
+        # Prioritize rows in the areas Subsales actually cares about, so a
+        # capped detail-fetch budget isn't spread thin across statewide
+        # listings that get filtered out downstream anyway - confirmed via
+        # a live run: a flat cap against the full ~4500-row statewide
+        # scrape left only ~2% of ALL rows enriched, even though our real
+        # area of interest is under 200 rows.
+        from build_listing_posts import area_match
+        targets.sort(key=lambda r: 0 if area_match(r) else 1)
         targets = targets[:limit]
     total = len(targets)
     for i, row in enumerate(targets, 1):
