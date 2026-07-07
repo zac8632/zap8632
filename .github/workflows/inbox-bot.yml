@@ -6,23 +6,13 @@ name: Inbox Bot
 # whole point of this second source vs mudah), and runs them through the
 # same photo_curate.py + post_content.py pipeline.
 #
-# SETUP REQUIRED before this does anything useful:
-#   1. Create a bot via @BotFather on Telegram, get its token.
-#   2. Add it as a repo secret named TELEGRAM_BOT_TOKEN.
-#   3. Message the bot once from your own Telegram account - the run log
-#      will print "unauthorised chat_id=<N>"; add that chat_id to
-#      ALLOWED_CHAT_IDS in scripts/listings-pipeline/telegram_listings.py.
-#   4. Re-run. Only whitelisted chat_ids are ever processed.
-#   5. (Optional, for the private agent-contact log) Create/reuse a PRIVATE
-#      Google Sheet, share it with the same service account's client_email
-#      already used for the mudah pipeline, and set repo VARIABLE
-#      TELEGRAM_LOG_GSHEET_ID to its ID. Reuses secret GSHEET_SERVICE_ACCOUNT_JSON
-#      - nothing new to create there. This repo is PUBLIC, so this log
-#      deliberately never touches git or a workflow artifact - see context.md.
+# Setup done: TELEGRAM_BOT_TOKEN repo secret is set, and the operator's own
+# chat_id is whitelisted in ALLOWED_CHAT_IDS in telegram_listings.py.
+# The private agent-contact log (TELEGRAM_LOG_GSHEET_ID) and Airtable sync
+# are both still optional/off - see context.md.
 #
 # Runs on a short interval since it's just polling getUpdates (cheap, no
-# long-running process needed) - start with workflow_dispatch while testing,
-# switch the schedule on once confirmed working.
+# long-running process needed).
 
 on:
   workflow_dispatch:
@@ -39,9 +29,8 @@ on:
         description: "Airtable base ID to sync finalized listings into (blank = skip Airtable sync)"
         required: false
         default: "appwkcMDwzNN9NTuo"
-  # Uncomment once ALLOWED_CHAT_IDS is configured and a manual test run looks right:
-  # schedule:
-  #   - cron: "*/10 * * * *"
+  schedule:
+    - cron: "*/10 * * * *"
 
 # Queues overlapping runs instead of racing on data/telegram-bot-state and
 # data/telegram-listing-media - two runs pushing to the same data branch at
@@ -90,8 +79,13 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_LOG_GSHEET_ID: ${{ vars.TELEGRAM_LOG_GSHEET_ID }}
           TELEGRAM_LOG_GSHEET_KEY: gsheet_key.json
-          DRY_RUN: ${{ github.event.inputs.dry_run || 'true' }}
-          FORCE_FLUSH: ${{ github.event.inputs.force_flush || 'true' }}
+          # github.event.inputs is unset on schedule-triggered runs, so the
+          # old `|| 'true'` fallback would make every scheduled run a
+          # perpetual dry-run/force-flush and never actually process real
+          # submissions - only default to dry-run/force-flush on manual
+          # workflow_dispatch testing runs.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.dry_run || 'true') || 'false' }}
+          FORCE_FLUSH: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.force_flush || 'true') || 'false' }}
         run: |
           FLAGS=""
           if [ "$DRY_RUN" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
