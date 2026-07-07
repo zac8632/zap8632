@@ -66,6 +66,20 @@ jobs:
                   for i, v in enumerate(obj[:50]):
                       walk(v, f"{path}[{i}]")
 
+          def key_tree(obj, depth=0, max_depth=4):
+              if depth > max_depth:
+                  return
+              if isinstance(obj, dict):
+                  for k, v in obj.items():
+                      kind = type(v).__name__
+                      extra = ""
+                      if isinstance(v, list):
+                          extra = f" (len={len(v)})"
+                      print("  " * depth + f"{k}: {kind}{extra}")
+                      key_tree(v, depth + 1, max_depth)
+              elif isinstance(obj, list) and obj:
+                  key_tree(obj[0], depth, max_depth)
+
           for fname in sorted(glob.glob("debug_detail_page.json")) + sorted(glob.glob("debug_*_first_ad.json")):
               print(f"\n===== {fname} =====")
               try:
@@ -75,6 +89,9 @@ jobs:
                   print(f"  (failed to load: {e})")
                   continue
               walk(data)
+              if fname == "debug_detail_page.json":
+                  print(f"\n----- key tree for {fname} (depth 4) -----")
+                  key_tree(data)
           PY
 
       - uses: actions/upload-artifact@v4
