@@ -246,6 +246,29 @@ def clean_description(text):
     return text.strip()
 
 
+# mudah's own categoryParams for a listing detail page have no furnishing
+# param at all (confirmed via a live debug dump - the listing's structured
+# params covered price/rooms/bathroom/size/etc but no furnishing key,
+# despite the free-text description literally saying "Partially
+# Furnished"). Furnishing only exists as a facts-buried-in-prose thing, so
+# extract it from the description text instead of a structured field.
+FURNISHING_TEXT_PATTERNS = [
+    (re.compile(r"\bfully[\s-]*furnish", re.IGNORECASE), "Fully Furnished"),
+    (re.compile(r"\b(?:partial(?:ly)?|semi)[\s-]*furnish", re.IGNORECASE), "Partially Furnished"),
+    (re.compile(r"\bun[\s-]*furnish", re.IGNORECASE), "Unfurnished"),
+    (re.compile(r"\b(?:not?|non)[\s-]*furnish", re.IGNORECASE), "Unfurnished"),
+]
+
+
+def extract_furnishing_from_text(text):
+    if not text:
+        return None
+    for pattern, label in FURNISHING_TEXT_PATTERNS:
+        if pattern.search(text):
+            return label
+    return None
+
+
 PHONE_DIGITS_RE = re.compile(r"^1[0-46-9]\d{7,8}$")
 
 
@@ -519,6 +542,11 @@ def enrich_with_details(session, rows, limit, debug_dump):
                         val = format_date_ddmmyyyy(val)
                     elif key == "description":
                         val = clean_description(val)
+                    elif key == "furnishing" and not val:
+                        # mudah has no structured furnishing param at all on
+                        # the detail page - only ever mentioned in the raw
+                        # description prose.
+                        val = extract_furnishing_from_text(_first(attrs, MUDAH_FIELD_CANDIDATES["description"]))
                     if val:
                         row[col] = val
         print(f"[details] {i}/{total}: {url}", file=sys.stderr)
@@ -604,7 +632,7 @@ def scrape_category(session, label, base_url, max_pages, owner_only, debug_dump,
                 "Location":      _first(a, MUDAH_FIELD_CANDIDATES["location"]),
                 "State":         _first(a, MUDAH_FIELD_CANDIDATES["state"]),
                 "Tenure":        field_value(a, "tenure", params),
-                "Furnishing":    field_value(a, "furnishing", params),
+                "Furnishing":    field_value(a, "furnishing", params) or extract_furnishing_from_text(_first(a, MUDAH_FIELD_CANDIDATES["description"])),
                 "Bedrooms":      field_value(a, "bedroom", params),
                 "Bathrooms":     field_value(a, "bathroom", params),
                 "Size (sqft)":   field_value(a, "size", params),

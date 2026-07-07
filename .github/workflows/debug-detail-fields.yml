@@ -96,7 +96,10 @@ jobs:
           print("\n\n===== simulating find_ad_node + field_value on debug_detail_page.json =====")
           import sys
           sys.path.insert(0, ".")
-          from scrape_penang_owners import find_ad_node, field_value, extract_category_params, DETAIL_FILL_COLUMNS
+          from scrape_penang_owners import (
+              find_ad_node, field_value, extract_category_params, DETAIL_FILL_COLUMNS,
+              MUDAH_FIELD_CANDIDATES, extract_furnishing_from_text, _first,
+          )
 
           with open("debug_detail_page.json") as f:
               nd = json.load(f)
@@ -123,7 +126,11 @@ jobs:
               print(f"  extracted params dict: {params}")
               for col, key in DETAIL_FILL_COLUMNS.items():
                   val = field_value(attrs, key, params)
-                  print(f"  {col} ({key}) = {val!r}")
+                  if key == "furnishing" and not val:
+                      val = extract_furnishing_from_text(_first(attrs, MUDAH_FIELD_CANDIDATES["description"]))
+                      print(f"  {col} ({key}) = {val!r}  (from text-extraction fallback)")
+                  else:
+                      print(f"  {col} ({key}) = {val!r}")
           PY
 
       - uses: actions/upload-artifact@v4
