@@ -6,10 +6,10 @@ name: Inbox Bot
 # whole point of this second source vs mudah), and runs them through the
 # same photo_curate.py + post_content.py pipeline.
 #
-# Setup done: TELEGRAM_BOT_TOKEN repo secret is set, and the operator's own
-# chat_id is whitelisted in ALLOWED_CHAT_IDS in telegram_listings.py.
-# The private agent-contact log (TELEGRAM_LOG_GSHEET_ID) and Airtable sync
-# are both still optional/off - see context.md.
+# Setup done: TELEGRAM_BOT_TOKEN repo secret is set, the operator's own
+# chat_id is whitelisted in ALLOWED_CHAT_IDS in telegram_listings.py, the
+# private agent-contact log is wired up via the TELEGRAM_LOG_GSHEET_ID repo
+# variable, and finalized listings sync to Airtable (see context.md).
 #
 # Runs on a short interval since it's just polling getUpdates (cheap, no
 # long-running process needed).
@@ -109,14 +109,20 @@ jobs:
 
       # Uploads photos/creatives straight to Airtable via its content API
       # (base64, no public URL needed) - no git commit of photos required.
+      # github.event.inputs is unset on schedule-triggered runs (same trap as
+      # DRY_RUN above) - the old condition/base-id both read it directly, so
+      # this step silently never ran on a real scheduled poll, only when
+      # manually dispatched. Falls back to the known base id whenever inputs
+      # aren't present (schedule) or the manual input was left blank.
       - name: Sync finalized listings to Airtable
-        if: ${{ github.event.inputs.dry_run != 'true' && github.event.inputs.airtable_base_id != '' }}
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.dry_run != 'true' }}
         working-directory: scripts/listings-pipeline
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+          AIRTABLE_BASE_ID: ${{ github.event.inputs.airtable_base_id || 'appwkcMDwzNN9NTuo' }}
         run: |
           python airtable_sync.py \
-            --base-id "${{ github.event.inputs.airtable_base_id }}" \
+            --base-id "$AIRTABLE_BASE_ID" \
             --telegram-dir telegram_input
 
       - name: Commit bot state back to data branch (so the offset persists)
