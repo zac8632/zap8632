@@ -48,6 +48,35 @@ jobs:
             --seen-file /tmp/penang_seen_listings_debug.json \
             --no-dedup-tracking
 
+      - name: Grep dumped JSON for furnishing/bedroom/bathroom keys (prints straight to job log)
+        working-directory: scripts/listings-pipeline
+        run: |
+          python3 - <<'PY'
+          import json, re, glob
+
+          def walk(obj, path=""):
+              if isinstance(obj, dict):
+                  for k, v in obj.items():
+                      p = f"{path}.{k}" if path else str(k)
+                      if re.search(r"furnish|bedroom|bathroom|room|bath", str(k), re.I):
+                          preview = v if not isinstance(v, (dict, list)) else type(v).__name__
+                          print(f"MATCH  {p} = {preview!r}")
+                      walk(v, p)
+              elif isinstance(obj, list):
+                  for i, v in enumerate(obj[:50]):
+                      walk(v, f"{path}[{i}]")
+
+          for fname in sorted(glob.glob("debug_detail_page.json")) + sorted(glob.glob("debug_*_first_ad.json")):
+              print(f"\n===== {fname} =====")
+              try:
+                  with open(fname) as f:
+                      data = json.load(f)
+              except Exception as e:
+                  print(f"  (failed to load: {e})")
+                  continue
+              walk(data)
+          PY
+
       - uses: actions/upload-artifact@v4
         with:
           name: debug-detail-fields
