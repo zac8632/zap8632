@@ -92,6 +92,38 @@ jobs:
               if fname == "debug_detail_page.json":
                   print(f"\n----- key tree for {fname} (depth 4) -----")
                   key_tree(data)
+
+          print("\n\n===== simulating find_ad_node + field_value on debug_detail_page.json =====")
+          import sys
+          sys.path.insert(0, ".")
+          from scrape_penang_owners import find_ad_node, field_value, extract_category_params, DETAIL_FILL_COLUMNS
+
+          with open("debug_detail_page.json") as f:
+              nd = json.load(f)
+
+          # list_id came from the URL in the "[details] 1/5" log line - the
+          # first --detail-limit target this run. Try every id under
+          # adDetails.byID as a fallback in case the URL-derived id format
+          # doesn't match what's stored.
+          candidate_ids = list(
+              (nd.get("props", {}).get("initialState", {}).get("adDetails", {}).get("byID", {}) or {}).keys()
+          )
+          print(f"candidate ad ids in adDetails.byID: {candidate_ids}")
+
+          for list_id in candidate_ids:
+              node = find_ad_node(nd, list_id)
+              print(f"\n--- list_id={list_id} ---")
+              if node is None:
+                  print("  find_ad_node returned None")
+                  continue
+              print(f"  node top-level keys: {list(node.keys()) if isinstance(node, dict) else type(node)}")
+              attrs = node.get("attributes", node) if isinstance(node, dict) else node
+              print(f"  attrs top-level keys: {list(attrs.keys()) if isinstance(attrs, dict) else type(attrs)}")
+              params = extract_category_params(attrs)
+              print(f"  extracted params dict: {params}")
+              for col, key in DETAIL_FILL_COLUMNS.items():
+                  val = field_value(attrs, key, params)
+                  print(f"  {col} ({key}) = {val!r}")
           PY
 
       - uses: actions/upload-artifact@v4
