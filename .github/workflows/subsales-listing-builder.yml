@@ -68,6 +68,7 @@ jobs:
         env:
           NEW_ONLY: ${{ github.event.inputs.new_only || 'false' }}
           LIMIT: ${{ github.event.inputs.limit || '0' }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           NEW_FLAG=""
           if [ "$NEW_ONLY" = "true" ]; then NEW_FLAG="--new-only"; fi

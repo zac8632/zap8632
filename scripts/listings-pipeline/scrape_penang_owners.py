@@ -1066,6 +1066,23 @@ def main():
         print("Both --gsheet-id and --gsheet-key are required to sync to Google Sheets - skipping sync.",
               file=sys.stderr)
 
+    # Best-effort Slack ping (no-op unless SLACK_WEBHOOK_URL is set).
+    try:
+        from slack_notify import notify
+
+        def _pct(col):
+            return round(100 * df[col].notna().sum() / max(1, len(df))) if col in df else 0
+
+        lines = [f"🏠 *Daily scrape done* — {len(df):,} listings"]
+        if new_count is not None:
+            lines.append(f"• {new_count:,} new since last run")
+        lines.append(f"• {len(focus_df)} in Focus Area")
+        lines.append(f"• fill rates — bedrooms {_pct('Bedrooms')}%, "
+                     f"bathrooms {_pct('Bathrooms')}%, furnishing {_pct('Furnishing')}%")
+        notify("\n".join(lines))
+    except Exception as e:  # noqa: BLE001 - notification is best-effort
+        print(f"[slack] skipped: {e}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()

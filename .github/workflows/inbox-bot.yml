@@ -79,6 +79,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_LOG_GSHEET_ID: ${{ vars.TELEGRAM_LOG_GSHEET_ID }}
           TELEGRAM_LOG_GSHEET_KEY: gsheet_key.json
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           # github.event.inputs is unset on schedule-triggered runs, so the
           # old `|| 'true'` fallback would make every scheduled run a
           # perpetual dry-run/force-flush and never actually process real
