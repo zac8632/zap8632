@@ -1068,18 +1068,28 @@ def main():
 
     # Best-effort Slack ping (no-op unless SLACK_WEBHOOK_URL is set).
     try:
-        from slack_notify import notify
+        import slack_notify as sl
 
         def _pct(col):
             return round(100 * df[col].notna().sum() / max(1, len(df))) if col in df else 0
 
-        lines = [f"🏠 *Daily scrape done* — {len(df):,} listings"]
-        if new_count is not None:
-            lines.append(f"• {new_count:,} new since last run")
-        lines.append(f"• {len(focus_df)} in Focus Area")
-        lines.append(f"• fill rates — bedrooms {_pct('Bedrooms')}%, "
-                     f"bathrooms {_pct('Bathrooms')}%, furnishing {_pct('Furnishing')}%")
-        notify("\n".join(lines))
+        new_txt = f"{new_count:,}" if new_count is not None else "—"
+        blocks = [
+            sl.header("🏠 Daily scrape complete"),
+            sl.fields([
+                ("Total listings", f"{len(df):,}"),
+                ("New today", new_txt),
+                ("Focus area", f"{len(focus_df)}"),
+            ]),
+            sl.section(
+                f"*Fill rates*\n"
+                f"🛏  Bedrooms  `{_pct('Bedrooms')}%`      "
+                f"🛁  Bathrooms  `{_pct('Bathrooms')}%`      "
+                f"🛋  Furnishing  `{_pct('Furnishing')}%`"),
+            sl.context("Google Sheet · _All Listings_ tab updated"),
+        ]
+        text = f"Daily scrape complete: {len(df):,} listings, {new_txt} new today"
+        sl.notify(text, blocks=blocks)
     except Exception as e:  # noqa: BLE001 - notification is best-effort
         print(f"[slack] skipped: {e}", file=sys.stderr)
 

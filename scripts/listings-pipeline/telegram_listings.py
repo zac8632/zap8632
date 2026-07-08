@@ -634,11 +634,18 @@ def main():
 
     # Best-effort Slack ping (no-op unless SLACK_WEBHOOK_URL is set).
     try:
-        from slack_notify import notify
+        import slack_notify as sl
         titles = [listing.get("Title") or listing["_batch_id"] for listing in finalized]
-        lines = [f"📩 *Telegram listing processed* — {len(titles)} finalized"]
-        lines += [f"• {t}" for t in titles[:10]]
-        notify("\n".join(lines))
+        if titles:
+            body = "\n".join(f"•  {t}" for t in titles[:10])
+            if len(titles) > 10:
+                body += f"\n_…and {len(titles) - 10} more_"
+            blocks = [
+                sl.header(f"📩 {len(titles)} Telegram listing(s) processed"),
+                sl.section(body),
+                sl.context("Creatives + captions sent back to Telegram · synced to Airtable"),
+            ]
+            sl.notify(f"{len(titles)} Telegram listing(s) processed", blocks=blocks)
     except Exception as e:  # noqa: BLE001 - notification is best-effort
         print(f"[slack] skipped: {e}", file=sys.stderr)
 

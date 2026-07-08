@@ -372,16 +372,23 @@ def main():
 
     # Best-effort Slack ping (no-op unless SLACK_WEBHOOK_URL is set).
     try:
-        from slack_notify import notify
+        import slack_notify as sl
 
-        lines = [
-            "🧾 *Subsales queue built*",
-            f"• {len(clean_rows['sale'])} for sale",
-            f"• {len(clean_rows['rent'])} for rent",
+        n_sale, n_rent, n_flag = len(clean_rows["sale"]), len(clean_rows["rent"]), len(flagged_rows)
+        blocks = [
+            sl.header("🧾 Subsales queue built"),
+            sl.fields([
+                ("🟢 For sale", f"{n_sale}"),
+                ("🔵 For rent", f"{n_rent}"),
+            ]),
         ]
-        if flagged_rows:
-            lines.append(f"• ⚠️ {len(flagged_rows)} flagged as price anomalies (excluded)")
-        notify("\n".join(lines))
+        if n_flag:
+            blocks.append(sl.section(
+                f"⚠️  *{n_flag}* flagged as price anomalies — _excluded from posting_, "
+                f"see the *Flagged - Price Anomaly* tab"))
+        blocks.append(sl.context("Google Sheet · _Subsales Queue - Sale / - Rent_ tabs updated"))
+        text = f"Subsales queue built: {n_sale} for sale, {n_rent} for rent"
+        sl.notify(text, blocks=blocks)
     except Exception as e:  # noqa: BLE001 - notification is best-effort
         print(f"[slack] skipped: {e}", file=sys.stderr)
 
