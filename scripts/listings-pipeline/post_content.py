@@ -179,7 +179,7 @@ def property_descriptor(listing):
     the phrasing varied per-listing (see _variant_index) instead of one
     fixed sentence skeleton reused everywhere."""
     bd = _clean(listing.get("Bedrooms"))
-    ptype = _clean(listing.get("Property Type")) or "property"
+    ptype = normalize_property_type(_clean(listing.get("Property Type"))) or "property"
     area = _clean(listing.get("Location"))
     action = "for rent" if is_rental(listing) else "for sale"
     lead = f"{bd}-bedroom {ptype}" if bd else ptype
@@ -199,6 +199,24 @@ def is_new_today(listing):
     if isinstance(v, bool):
         return v
     return str(v).strip().lower() in ("true", "1", "yes")
+
+
+def normalize_property_type(ptype):
+    """mudah's own category label is sometimes a combined pair like
+    "Apartment / Condominium" (it's their category name, not two separate
+    facts) - reading that literally into a caption produces an awkward
+    "apartment / condominium for sale" everywhere. Pick ONE term: prefer
+    "Condominium" when it's one of the options (the more common marketing
+    term locally), otherwise the first option."""
+    if not ptype:
+        return ptype
+    if "/" in ptype:
+        parts = [p.strip() for p in ptype.split("/") if p.strip()]
+        for p in parts:
+            if "condo" in p.lower():
+                return p
+        return parts[0] if parts else ptype
+    return ptype
 
 
 def specs_plain(listing):
@@ -270,37 +288,93 @@ def scrub_contact(text):
     return " ".join(x for x in kept if x)
 
 
-# Opening clauses for an auto-generated description, picked deterministically
-# per listing (see _variant_index). Each is completed with whichever facts
-# (bedrooms/bathrooms/size) the listing actually has - never invented ones.
-_AUTO_DESC_OPENERS = [
-    "This {ptype} in {area} offers",
-    "A well-appointed {ptype} {action} in {area}, featuring",
-    "Located in {area}, this {ptype} comes with",
-    "{ptype_cap} {action} in {area}, offering",
+# Real-estate selling-point phrases to look for in the owner's OWN free
+# text - the mudah "Description" field, or (for the Telegram bot) whatever
+# text the operator pasted describing the listing. Matches are pulled out
+# VERBATIM from that text and reused, never paraphrased or invented, so a
+# caption only ever claims something like "sea view" when the owner
+# actually wrote it somewhere.
+_HIGHLIGHT_PATTERNS = [
+    re.compile(r"\b(?:sea|pool|city|garden|park|mountain)\s+view\b", re.I),
+    re.compile(r"\bcorner\s+(?:unit|lot)\b", re.I),
+    re.compile(r"\b(?:fully|newly|recently)\s+renovated\b", re.I),
+    re.compile(r"\bmove[- ]?in\s+ready\b", re.I),
+    re.compile(r"\bgated\s*(?:&|and)?\s*guarded\b", re.I),
+    re.compile(r"\bwalking\s+distance\s+to\s+[A-Za-z][\w &]{2,30}", re.I),
+    re.compile(r"\bhigh\s+floor\b", re.I),
+    re.compile(r"\blow\s+density\b", re.I),
+    re.compile(r"\bfacing\s+(?:the\s+)?(?:sea|pool|park|city)\b", re.I),
+    re.compile(r"\bfreehold\b", re.I),
+    re.compile(r"\brenovated\s+kitchen\b", re.I),
+    re.compile(r"\bnear(?:by)?\s+[A-Za-z][\w &]{2,30}", re.I),
 ]
-_AUTO_DESC_OPENERS_NO_AREA = [
-    "This {ptype} offers",
-    "A well-appointed {ptype} {action}, featuring",
+
+
+def extract_highlights(text, max_n=2):
+    """Pull up to max_n short, real selling-point phrases straight out of
+    the owner's own free text - verbatim substrings, never paraphrased or
+    invented (see _HIGHLIGHT_PATTERNS)."""
+    if not text:
+        return []
+    found, seen = [], set()
+    for pat in _HIGHLIGHT_PATTERNS:
+        m = pat.search(text)
+        if not m:
+            continue
+        phrase = re.sub(r"\s+", " ", m.group(0)).strip(" ,.-")
+        key = phrase.lower()
+        if key not in seen:
+            seen.add(key)
+            found.append(phrase)
+        if len(found) >= max_n:
+            break
+    return found
+
+
+# Size-driven adjectives - a genuine inference from the listing's own sqft
+# figure (the way a real agent would describe it), not an invented claim.
+# Several options per band, picked deterministically (see _variant_index).
+_SIZE_BANDS = [
+    (0, 600, ["cozy", "compact"]),
+    (600, 1200, ["comfortable", "well-proportioned"]),
+    (1200, 2500, ["spacious", "generously sized"]),
+    (2500, float("inf"), ["expansive", "grand"]),
 ]
+
+# How the fact list is joined onto the lead clause - varied per listing so
+# it doesn't always read "featuring X, Y, Z."
+_FACT_CONNECTORS = ["with", "featuring", "boasting", "offering"]
+
+
+def _size_adjective(listing, sz_num):
+    for lo, hi, options in _SIZE_BANDS:
+        if lo <= sz_num < hi:
+            return options[_variant_index(listing, len(options))]
+    return None
 
 
 def generate_description(listing):
-    """A short natural-language description built ONLY from the listing's
-    own structured fields (bedrooms/bathrooms/size/tenure/furnishing/area) -
-    used as a fallback when the owner left no free-text description at all.
-    Never invents amenities, condition, or claims that aren't in the data;
-    it just states the facts already on the listing in prose instead of a
-    bare spec line. Phrasing varies per-listing (see _variant_index) so a
-    feed of these doesn't read like the same form letter every time."""
-    ptype = (_clean(listing.get("Property Type")) or "property").lower()
+    """A short natural-language description that reads like an actual
+    listing blurb, not a spec sheet in prose. Built from:
+      - the listing's own structured facts (bedrooms/bathrooms/size/tenure/
+        furnishing) - stated with varied connectors and a size-driven
+        adjective, never a fixed "featuring A, B, C." skeleton
+      - real selling-point phrases pulled VERBATIM from the owner's own
+        free text (mudah's Description field, or whatever was pasted into
+        the Telegram bot), if any exist - see extract_highlights()
+    Never invents amenities, condition, or claims not present in one of
+    those two real sources. Phrasing varies per-listing (see
+    _variant_index) so a feed of these doesn't read like a form letter."""
+    ptype = (normalize_property_type(_clean(listing.get("Property Type"))) or "property").lower()
     area = _clean(listing.get("Location"))
     action = "for rent" if is_rental(listing) else "for sale"
     bd = _clean(listing.get("Bedrooms"))
     ba = _clean(listing.get("Bathrooms"))
     sz = _clean(listing.get("Size (sqft)"))
+    sz_num = price_num(sz)
     tenure = _clean(listing.get("Tenure"))
     furnishing = _clean(listing.get("Furnishing"))
+    highlights = extract_highlights(_clean(listing.get("Description")))
 
     facts = []
     if bd:
@@ -308,23 +382,33 @@ def generate_description(listing):
     if ba:
         facts.append(f"{ba} bathroom{'s' if ba != '1' else ''}")
     if sz:
-        facts.append(f"{sz} sqft of built-up space")
-    if not facts and not area:
+        facts.append(f"{sz} sqft")
+    if not facts and not area and not highlights:
         return None  # not enough on this listing to say anything real
 
+    adjective = _size_adjective(listing, sz_num) if sz_num else None
+    lead_ptype = f"{adjective} {ptype}" if adjective else ptype
+    lead = f"This {lead_ptype} {action}" + (f" in {area}" if area else "")
+
     if facts:
-        # These openers are written to be completed BY the fact list
-        # ("...featuring 3 bedrooms, 2 bathrooms.") - only used when there
-        # are facts to complete them with.
-        templates = _AUTO_DESC_OPENERS if area else _AUTO_DESC_OPENERS_NO_AREA
-        opener = templates[_variant_index(listing, len(templates))].format(
-            ptype=ptype, ptype_cap=ptype.capitalize(), action=action, area=area or "")
-        body = f"{opener} {', '.join(facts)}."
+        connector = _FACT_CONNECTORS[_variant_index(listing, len(_FACT_CONNECTORS))]
+        if len(facts) > 1:
+            facts_txt = ", ".join(facts[:-1]) + f" and {facts[-1]}"
+        else:
+            facts_txt = facts[0]
+        body = f"{lead}, {connector} {facts_txt}"
     else:
-        # No bedroom/bathroom/size at all (e.g. a land listing) - a plain
-        # standalone sentence instead of a fact-expecting opener left
-        # dangling with nothing to complete it.
-        body = f"{ptype.capitalize()} {action} in {area}." if area else f"{ptype.capitalize()} {action}."
+        body = lead
+
+    if highlights:
+        # Lowercase each phrase's first letter for the mid-sentence join -
+        # they're common noun phrases ("Corner unit" -> "corner unit"), not
+        # proper nouns, so this keeps the sentence grammatically consistent
+        # regardless of how the owner happened to capitalize their text.
+        lowered = [h[0].lower() + h[1:] for h in highlights]
+        body += " — " + " and ".join(lowered)
+    body += "."
+
     extras = [x for x in (tenure, furnishing) if x]
     if extras:
         body += " " + " · ".join(extras) + "."
