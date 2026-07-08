@@ -551,7 +551,19 @@ def main():
     ap.add_argument("--force-flush", action="store_true",
                      help="Process all pending batches immediately, ignoring the idle timer "
                           "(useful for manual testing).")
+    ap.add_argument("--price-history", default="subsales_price_history.json",
+                     help="Optional price-per-sqft memory (same file subsales_listing_builder.py "
+                          "writes) used to add a real 'X% below area psf' caption line when it "
+                          "applies. Missing file just means that line is skipped.")
     args = ap.parse_args()
+
+    price_history = {}
+    if os.path.exists(args.price_history):
+        try:
+            with open(args.price_history) as f:
+                price_history = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"Could not read --price-history {args.price_history}: {e}", file=sys.stderr)
 
     token = (os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
     if not token:
@@ -601,7 +613,7 @@ def main():
         curated_paths = [c["path"] for c in curated] or photos[:5]
         creatives = post_content.render_creatives(
             curated_paths, listing, os.path.join(listing_dir, "creatives"))
-        caps = post_content.build_captions(listing)
+        caps = post_content.build_captions(listing, price_history=price_history)
         with open(os.path.join(listing_dir, "captions.md"), "w") as f:
             for plat, txt in caps.items():
                 f.write(f"## {plat}\n\n{txt}\n\n")
