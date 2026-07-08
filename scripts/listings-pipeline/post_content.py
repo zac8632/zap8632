@@ -110,6 +110,145 @@ def facts_line(listing):
     return " · ".join(out)
 
 
+def is_rental(listing):
+    """True if this is a rental listing rather than a sale. Prefers an
+    explicit Listing Type (sale/rent, as Subsales sets it), falling back to
+    the scraped Category text ("... For Rent")."""
+    lt = str(listing.get("Listing Type") or "").strip().lower()
+    if lt in ("rent", "sale"):
+        return lt == "rent"
+    return "for rent" in str(listing.get("Category") or "").lower()
+
+
+def price_display(listing):
+    """Rental-aware headline price. Returns (price_str, approx_or_None).
+    Rentals read "For Rent RM X,XXX/mo" (monthly, no FX approx since a
+    monthly rent in USD/SGD is meaningless to buyers); sales keep the
+    RM figure plus the USD/SGD approximation."""
+    myr = price_num(listing.get("Price (RM)"))
+    if not myr:
+        return None, None
+    if is_rental(listing):
+        return f"For Rent RM {int(myr):,}/mo", None
+    myr_s = f"RM {int(myr):,}"
+    approx = f"≈ USD {_approx(myr, FX['usd'])} / SGD {_approx(myr, FX['sgd'])} approx."
+    return myr_s, approx
+
+
+def condo_title(listing):
+    """"<Condo Name>, <Area>" - the headline that must always identify the
+    project. Falls back to whichever of project name / area is present."""
+    proj = project_name(listing)
+    area = _clean(listing.get("Location"))
+    if proj and area and area.lower() not in proj.lower():
+        return f"{proj}, {area}"
+    return proj or area or "Property listing"
+
+
+def property_descriptor(listing):
+    """A plain-prose one-liner - "3-bedroom Condominium for rent in
+    Tanjong Tokong" - built only from fields already on the listing."""
+    bd = _clean(listing.get("Bedrooms"))
+    ptype = _clean(listing.get("Property Type")) or "property"
+    area = _clean(listing.get("Location"))
+    action = "for rent" if is_rental(listing) else "for sale"
+    lead = f"{bd}-bedroom {ptype}" if bd else ptype
+    s = f"{lead} {action}"
+    if area:
+        s += f" in {area}"
+    return s[0].upper() + s[1:]
+
+
+def specs_plain(listing):
+    """"3 bed · 2 bath · 800 sqft" - no emoji, for the text-first platforms."""
+    bd = _clean(listing.get("Bedrooms"))
+    ba = _clean(listing.get("Bathrooms"))
+    sz = _clean(listing.get("Size (sqft)"))
+    out = []
+    if bd:
+        out.append(f"{bd} bed")
+    if ba:
+        out.append(f"{ba} bath")
+    if sz:
+        out.append(f"{sz} sqft")
+    return " · ".join(out)
+
+
+def spec_str_emoji(listing):
+    """"🛏 3 Beds · 🛁 2 Baths · 📐 800 sqft" - for the emoji-friendly IG caption."""
+    bd = _clean(listing.get("Bedrooms"))
+    ba = _clean(listing.get("Bathrooms"))
+    sz = _clean(listing.get("Size (sqft)"))
+    out = []
+    if bd:
+        out.append(f"🛏 {bd} Beds")
+    if ba:
+        out.append(f"🛁 {ba} Baths")
+    if sz:
+        out.append(f"📐 {sz} sqft")
+    return " · ".join(out)
+
+
+def extras_line(listing):
+    """Tenure + furnishing, whichever are present."""
+    tn = _clean(listing.get("Tenure"))
+    fn = _clean(listing.get("Furnishing"))
+    return " · ".join([x for x in (tn, fn) if x])
+
+
+_PHONE_RE = re.compile(r"(?:\+?6?0)?\s?1\d[\s\-]?\d{3,4}[\s\-]?\d{3,4}")
+_URL_RE = re.compile(r"https?://\S+|www\.\S+", re.I)
+_EMAIL_RE = re.compile(r"\b[\w.+\-]+@[\w\-]+\.\w+\b")
+_HANDLE_RE = re.compile(r"(?<!\w)@\w+")
+_CONTACT_KEYWORD_RE = re.compile(
+    r"(?i)\b(call|whatsapp|wasap|wa|contact|hubungi|hp|tel|telephone|phone|"
+    r"dm|pm|email|e-mail|mail|reach)\b")
+
+
+def scrub_contact(text):
+    """Strip contact info from owner-written description text before it goes
+    into a PUBLIC caption - these are re-posted owner listings and the
+    no-contact-info rule (and basic privacy) means their number/email must
+    never leak. Works sentence-by-sentence so one "call me" clause at the
+    end doesn't wipe the whole (otherwise fine) description."""
+    if not text:
+        return ""
+    # Remove obvious tokens first (URLs/emails/@handles) everywhere.
+    t = _URL_RE.sub(" ", text)
+    t = _EMAIL_RE.sub(" ", t)
+    t = _HANDLE_RE.sub(" ", t)
+    # Then drop any sentence still carrying a phone number or a contact
+    # keyword ("call", "whatsapp", "email me", etc), keeping the rest.
+    kept = []
+    for chunk in re.split(r"(?<=[.!?])\s+|\n+", t):
+        stripped = _PHONE_RE.sub(" ", chunk)
+        if _PHONE_RE.search(chunk) or _CONTACT_KEYWORD_RE.search(stripped):
+            continue
+        kept.append(stripped.strip())
+    return " ".join(x for x in kept if x)
+
+
+def description_snippet(listing, max_chars=300):
+    """A cleaned, contact-scrubbed excerpt of the owner's own description,
+    for the longer IG/FB captions. Returns None if nothing usable survives."""
+    raw = _clean(listing.get("Description"))
+    if not raw:
+        return None
+    txt = scrub_contact(raw)
+    txt = re.sub(r"[•*►▪◆✦✅➤●]+", " ", txt)
+    txt = re.sub(r"\s+", " ", txt).strip(" -–—·|")
+    if len(txt) < 20:
+        return None
+    if len(txt) > max_chars:
+        cut = txt[:max_chars]
+        end = max(cut.rfind(". "), cut.rfind("! "))
+        if end > 60:
+            txt = cut[: end + 1]
+        else:
+            txt = cut.rsplit(" ", 1)[0].rstrip(",.") + "…"
+    return txt
+
+
 CTA = "DM to arrange a viewing"
 SAVE_PROMPT = "Save this for later"
 SWIPE_PROMPT = "Swipe for more photos"
@@ -137,54 +276,89 @@ def headline(listing):
 
 
 def build_captions(listing):
-    hook = headline(listing)
-    facts = facts_line(listing)
-    myr_s, approx = price_lines(price_num(listing.get("Price (RM)")))
-    price_block = myr_s + (f"\n{approx}" if approx else "") if myr_s else ""
+    """Per-platform captions, each written in that platform's native voice
+    rather than one caption reused everywhere. Every caption leads with the
+    condo name + area and states rent vs sale price explicitly. IG/FB get a
+    longer, standardized structure; Threads and WhatsApp get shorter,
+    direct phrasings. All are contact-free and hashtag-free."""
+    title = condo_title(listing)
+    descriptor = property_descriptor(listing)
+    snippet = description_snippet(listing)
+    price_s, approx = price_display(listing)
+    specs_e = spec_str_emoji(listing)
+    specs_p = specs_plain(listing)
+    extras = extras_line(listing)
+    price_block = (price_s + (f"  ({approx})" if approx else "")) if price_s else ""
 
-    # Instagram: front-loaded hook, then facts/price, a swipe cue (this is a
-    # carousel), CTA, and a save prompt - the last two are pure engagement
-    # nudges (not factual claims), both fine under the no-hashtag/no-contact
-    # rule since neither is a link, number, or handle.
-    ig = []
-    if hook:
-        ig.append(hook)
-    if facts:
-        ig.append(f"📍 {facts}")
+    # ---- Instagram: standardized, longer carousel caption ----
+    ig = [f"🏙 {title}", ""]
+    ig.append(descriptor + ".")
+    if snippet:
+        ig += ["", snippet]
+    ig.append("")
+    if specs_e:
+        ig.append(specs_e)
+    if extras:
+        ig.append(f"🏷 {extras}")
     if price_block:
         ig.append(f"💰 {price_block}")
-    ig.append(f"➡️ {SWIPE_PROMPT}")
-    ig.append(f"💬 {CTA}")
-    ig.append(f"📌 {SAVE_PROMPT}")
+    ig += ["", f"➡️ {SWIPE_PROMPT}", f"💬 {CTA}", f"📌 {SAVE_PROMPT}"]
     instagram = "\n".join(ig)
 
-    th = []
-    if hook:
-        th.append(hook + ".")
-    line2 = facts
-    if myr_s:
-        line2 = (facts + " — " if facts else "") + myr_s
-    if line2:
-        th.append(line2 + ".")
-    th.append(f"{CTA}.")
-    threads = " ".join(th)
+    # ---- Facebook: longer, prose intro + a scannable detail list. FB has
+    # no practical length limit and its audience skims bulleted specs. ----
+    lead = descriptor
+    if price_s:
+        lead += f" — {price_s}" if is_rental(listing) else f", priced at {price_s}"
+    fb = [title, "", lead + "."]
+    if snippet:
+        fb += ["", snippet]
+    details = []
+    for label, key in (("Bedrooms", "Bedrooms"), ("Bathrooms", "Bathrooms"),
+                        ("Built-up", "Size (sqft)"), ("Tenure", "Tenure"),
+                        ("Furnishing", "Furnishing")):
+        val = _clean(listing.get(key))
+        if val:
+            suffix = " sqft" if key == "Size (sqft)" else ""
+            details.append(f"• {label}: {val}{suffix}")
+    if price_block:
+        details.append(f"• Price: {price_block}")
+    if details:
+        fb += ["", "Details:"] + details
+    fb += ["", f"{CTA}."]
+    facebook = "\n".join(fb)
 
-    tk = []
-    if hook:
-        tk.append(hook)
-    if myr_s:
-        tk.append(myr_s + (f" · {facts}" if facts else ""))
-    tk.append(f"➡️ {SWIPE_PROMPT}")
-    tk.append(CTA)
+    # ---- Threads: short, conversational, no emoji spam ----
+    th_lines = [title]
+    sub = descriptor + (f" · {price_s}" if price_s else "")
+    th_lines.append(sub)
+    if specs_p:
+        th_lines.append(specs_p)
+    th_lines.append(CTA)
+    threads = "\n".join(th_lines)
+
+    # ---- WhatsApp / Telegram broadcast: plain, direct, *bold* title ----
+    wa = [f"*{title}*"]
+    if price_s:
+        wa.append(price_s)
+    wa_specs = " · ".join([x for x in (specs_p, extras) if x])
+    if wa_specs:
+        wa.append(wa_specs)
+    if snippet:
+        wa.append(description_snippet(listing, max_chars=180))
+    wa.append(CTA)
+    whatsapp = "\n".join(wa)
+
+    # ---- TikTok / Story kept for back-compat (not a focus platform) ----
+    tk = [title]
+    if price_s:
+        tk.append(price_s + (f" · {specs_p}" if specs_p else ""))
+    tk += [f"➡️ {SWIPE_PROMPT}", CTA]
     tiktok = "\n".join(tk)
+    story = f"{title}\n{price_s}\n{CTA}" if price_s else f"{title}\n{CTA}"
 
-    story = f"{hook}\n{CTA}" if hook else CTA
-
-    wa_bits = [b for b in [_clean(listing.get("Location")), myr_s] if b]
-    whatsapp = " · ".join(wa_bits) + f"\n{CTA}" if wa_bits else CTA
-
-    return {"instagram": instagram, "threads": threads, "tiktok": tiktok,
-            "story": story, "whatsapp": whatsapp}
+    return {"instagram": instagram, "facebook": facebook, "threads": threads,
+            "whatsapp": whatsapp, "tiktok": tiktok, "story": story}
 
 
 # ------------------------------ creatives ------------------------------
@@ -312,7 +486,8 @@ def render_creatives(photo_paths, listing, out_dir, tag=True):
         return {"4x5": [], "9x16": []}
 
     os.makedirs(out_dir, exist_ok=True)
-    myr_s, _ = price_lines(price_num(listing.get("Price (RM)")))
+    # Rental-aware: "For Rent RM 2,000/mo" for rentals, "RM 350,000" for sales.
+    myr_s, _ = price_display(listing)
     area = _clean(listing.get("Location"))
     proj = project_name(listing)
     specs = spec_str(listing)
