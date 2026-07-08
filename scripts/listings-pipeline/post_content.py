@@ -294,19 +294,23 @@ def scrub_contact(text):
 # VERBATIM from that text and reused, never paraphrased or invented, so a
 # caption only ever claims something like "sea view" when the owner
 # actually wrote it somewhere. Ordered by priority (checked in this order,
-# stops once max_n are found) - prestige/luxury signals researched from how
-# Singapore luxury listings frame high-end condos (private lift, dual key,
-# sky facilities, unblocked view, tenure prestige, MRT connectivity) come
-# first, general condition/location phrases after.
+# stops once max_n are found) - luxury/prestige signals (private lift, dual
+# key, sky facilities, unblocked view, freehold/99-year leasehold tenure,
+# bridge/airport/ferry connectivity) come first, adapted to Malaysian
+# property-market conventions rather than Singapore's (freehold is the
+# prestige tenure here, not 999-year leases; Penang has no MRT, so
+# connectivity phrases reference the bridges/airport/ferry that actually
+# exist locally). General condition/location phrases come after.
 _HIGHLIGHT_PATTERNS = [
     re.compile(r"\bprivate\s+lift\b", re.I),
     re.compile(r"\bdual\s*[- ]?key\b", re.I),
     re.compile(r"\bpenthouse\b", re.I),
     re.compile(r"\b(?:sky|infinity|roof-?top)\s*(?:terrace|pool|garden|deck)\b", re.I),
     re.compile(r"\b(?:un(?:blocked|obstructed)|panoramic)\s+(?:sea\s+)?view\b", re.I),
-    re.compile(r"\b999[- ]?year\s+leasehold\b", re.I),
     re.compile(r"\bfreehold\b", re.I),
-    re.compile(r"\b(?:walk(?:ing)?\s+distance|near(?:by)?|steps?\s+(?:away\s+)?from)\s+(?:to\s+)?(?:the\s+)?(?:mrt|lrt)\b", re.I),
+    re.compile(r"\b99[- ]?year\s+leasehold\b", re.I),
+    re.compile(r"\b(?:walk(?:ing)?\s+distance|near(?:by)?|steps?\s+(?:away\s+)?from)\s+(?:to\s+)?(?:the\s+)?"
+               r"(?:penang\s+)?(?:bridge|airport|jetty|ferry(?:\s+terminal)?|highway|expressway|lrt)\b", re.I),
     re.compile(r"\bsmart\s+home\b", re.I),
     re.compile(r"\bwalk-?in\s+wardrobe\b", re.I),
     re.compile(r"\bconcierge\b", re.I),
