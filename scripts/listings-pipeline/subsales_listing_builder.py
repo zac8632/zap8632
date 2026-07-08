@@ -121,6 +121,43 @@ def assign_ref(registry, list_id, row):
     return ref
 
 
+PRICE_LOG_MAX_ENTRIES = 10
+
+
+def price_drop_note(registry, list_id, current_price):
+    """"Reduced from RM X to RM Y (12% off)" - a genuinely strong, fully
+    factual urgency signal for THIS SAME listing (not a project average),
+    based on its own price log in the registry. Called BEFORE today's price
+    is recorded (see record_listing_price), so the log's last entry is the
+    most recent PRIOR price - only one prior entry is needed to compare.
+    Returns "" when there's no prior price on record yet, or the price
+    hasn't actually dropped."""
+    log = registry.get(list_id, {}).get("price_log", [])
+    if not log or not current_price:
+        return ""
+    prev_price = log[-1].get("price")
+    if prev_price and current_price < prev_price:
+        pct = round((1 - current_price / prev_price) * 100)
+        return f"Reduced from RM {prev_price:,.0f} to RM {current_price:,.0f} ({pct}% off)"
+    return ""
+
+
+def record_listing_price(registry, list_id, price):
+    """Appends today's price to THIS listing's own price log - distinct
+    from the project/area-level price_history used for value/anomaly
+    comparisons. This per-listing log is what makes price_drop_note
+    possible: comparing a listing against its own past price, not an
+    average across other listings."""
+    if not price:
+        return
+    entry = registry.setdefault(list_id, {})
+    log = entry.setdefault("price_log", [])
+    if not log or log[-1].get("price") != price:
+        log.append({"date": datetime.date.today().isoformat(), "price": price})
+        if len(log) > PRICE_LOG_MAX_ENTRIES:
+            del log[0]
+
+
 def qualifies_for(row, listing_type):
     """Sale and rent have genuinely different qualifying rules - rent has no
     "high-value" price floor the way sale does, just a low bar to exclude
@@ -199,6 +236,13 @@ def _history_key(project, listing_type):
     return f"{listing_type}:{project.strip().lower()}"
 
 
+def _area_history_key(area, listing_type):
+    # Same "__area__" namespacing convention post_content.py's value_note()
+    # reads - both write/read the same subsales_price_history.json, so the
+    # key format has to match exactly.
+    return _history_key(f"__area__{area}", listing_type)
+
+
 def check_price_anomaly(psf, project, listing_type, history):
     """Compares this listing's price-per-sqft against the MEMORY of prices
     previously seen for this same condo/project - catches a unit priced way
@@ -221,22 +265,35 @@ def check_price_anomaly(psf, project, listing_type, history):
     return False, ""
 
 
-def record_price(history, project, listing_type, psf):
+def record_price(history, project, listing_type, psf, area=None):
     """Only ever called for non-anomalous prices, so a bad data point can
-    never work its way into the memory and shift future comparisons."""
+    never work its way into the memory and shift future comparisons. Also
+    records into an area-level bucket (when `area` is given) so
+    post_content.py's value_note() can still surface a "below area's
+    recent psf" callout for a project that hasn't built up its own 2+
+    prior listings yet - most projects only see a couple of listings a
+    month, so project-only history left the vast majority with no value
+    signal at all."""
     key = _history_key(project, listing_type)
     entries = history.setdefault(key, [])
     entries.append(round(psf, 2))
     if len(entries) > PRICE_HISTORY_MAX_ENTRIES:
         del entries[0]
+    if area:
+        area_key = _area_history_key(area, listing_type)
+        area_entries = history.setdefault(area_key, [])
+        area_entries.append(round(psf, 2))
+        if len(area_entries) > PRICE_HISTORY_MAX_ENTRIES:
+            del area_entries[0]
 
 
-def build_row(row, ref, listing_date, listing_type, price_history):
+def build_row(row, ref, listing_date, listing_type, price_history, registry, list_id):
     myr = price_num(row.get("Price (RM)"))
     sz = price_num(row.get("Size (sqft)"))
     myr_s, approx = price_lines(myr)
     title = subsales_title(row)
     proj = project_name(row) or title
+    area = _clean(row.get("Location"))
 
     bd = _clean(row.get("Bedrooms"))
     ba = _clean(row.get("Bathrooms"))
@@ -251,15 +308,23 @@ def build_row(row, ref, listing_date, listing_type, price_history):
         psf = myr / sz
         anomaly, anomaly_reason = check_price_anomaly(psf, proj, listing_type, price_history)
         if not anomaly:
-            record_price(price_history, proj, listing_type, psf)
+            record_price(price_history, proj, listing_type, psf, area=area)
+
+    # Compare against THIS listing's own price log BEFORE recording today's
+    # price into it, so a listing's first-ever appearance never compares
+    # against itself.
+    drop_note = price_drop_note(registry, list_id, myr) if myr else ""
+    if myr:
+        record_listing_price(registry, list_id, myr)
 
     row_out = {
         "ID": ref,
         "Property Name": title,
-        "Property Location": _clean(row.get("Location")) or "",
+        "Property Location": area or "",
         "Listing Type": "For Sale" if listing_type == "sale" else "For Rent",
         "Price (RM)": myr if myr else "",
         "Price Approx": approx or "",
+        "Price Change": drop_note,
         "Builtup Size": _clean(row.get("Size (sqft)")) or "",
         "Room / Bath": " / ".join(room_bath_bits),
         "Furnishing": _clean(row.get("Furnishing")) or "",
@@ -332,7 +397,7 @@ def main():
                 continue
             ref = assign_ref(registry, list_id, r)
             listing_date = registry[list_id].get("first_seen", "")
-            row_out, anomaly = build_row(r, ref, listing_date, listing_type, price_history)
+            row_out, anomaly = build_row(r, ref, listing_date, listing_type, price_history, registry, list_id)
             if anomaly:
                 print(f"  - {ref}: FLAGGED - {row_out['Property Name']} - "
                       f"{row_out['Price Anomaly']}", file=sys.stderr)
