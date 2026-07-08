@@ -440,6 +440,22 @@ def description_snippet(listing, max_chars=300):
     return txt
 
 
+def split_into_paragraphs(text, sentences_per_para=2):
+    """Break a longer description into short paragraphs (blank line between
+    each) instead of one dense block - easier to read/scan on IG and FB.
+    Short text (<= sentences_per_para sentences) is left as a single
+    paragraph, so this only kicks in when there's actually enough content
+    to benefit from a break."""
+    if not text:
+        return text
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+    if len(sentences) <= sentences_per_para:
+        return text
+    paragraphs = [" ".join(sentences[i:i + sentences_per_para])
+                  for i in range(0, len(sentences), sentences_per_para)]
+    return "\n\n".join(paragraphs)
+
+
 def _history_key(project, listing_type):
     return f"{listing_type}:{project.strip().lower()}"
 
@@ -517,6 +533,11 @@ def build_captions(listing, price_history=None):
     title = condo_title(listing)
     descriptor = property_descriptor(listing)
     snippet = description_snippet(listing)
+    # IG/FB are the longer-format captions - split a substantial snippet
+    # into short paragraphs instead of one dense block. Threads/WhatsApp
+    # stay as a single line by design (they're meant to be short), so they
+    # keep using the un-split `snippet` below.
+    snippet_long = split_into_paragraphs(snippet) if snippet else None
     price_s, approx = price_display(listing)
     specs_e = spec_str_emoji(listing)
     specs_p = specs_plain(listing)
@@ -528,8 +549,8 @@ def build_captions(listing, price_history=None):
     # ---- Instagram: standardized, longer carousel caption ----
     ig = [("🆕 Just Listed\n" if fresh else "") + f"🏙 {title}", ""]
     ig.append(descriptor + ".")
-    if snippet:
-        ig += ["", snippet]
+    if snippet_long:
+        ig += ["", snippet_long]
     ig.append("")
     if specs_e:
         ig.append(specs_e)
@@ -549,8 +570,8 @@ def build_captions(listing, price_history=None):
         lead += f" — {price_s}" if is_rental(listing) else f", priced at {price_s}"
     fb_title = ("🆕 Just Listed — " if fresh else "") + title
     fb = [fb_title, "", lead + "."]
-    if snippet:
-        fb += ["", snippet]
+    if snippet_long:
+        fb += ["", snippet_long]
     details = []
     for label, key in (("Bedrooms", "Bedrooms"), ("Bathrooms", "Bathrooms"),
                         ("Built-up", "Size (sqft)"), ("Tenure", "Tenure"),
