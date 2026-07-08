@@ -506,6 +506,12 @@ def render_creatives(photo_paths, listing, out_dir, tag=True):
             except Exception as e:
                 print(f"  [render] skip {ph}: {e}", file=sys.stderr)
                 continue
+            # Horizontal (landscape) source photos don't belong in a 9:16
+            # vertical creative - forcing them in means an ugly letterbox or a
+            # heavy crop. Skip the vertical for landscape shots; the 4:5 still
+            # gets made. A clearly-landscape frame is width > ~1.1x height.
+            if key == "9x16" and img.width > img.height * 1.1:
+                continue
             img = _auto_brighten(img)
             # 9:16 is a much narrower target than most real-estate photos are
             # shot in - a plain center-crop risks cutting off real content, so
