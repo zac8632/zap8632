@@ -68,6 +68,13 @@ jobs:
             > telegram_input/telegram_state.json 2>/dev/null \
             || echo '{"last_update_id": 0, "pending": {}}' > telegram_input/telegram_state.json
 
+      - name: Restore price-per-sqft memory from data branch (best-effort, for the caption "X% below area psf" line)
+        working-directory: scripts/listings-pipeline
+        run: |
+          git fetch origin data/subsales-registry || true
+          git show origin/data/subsales-registry:scripts/listings-pipeline/subsales_price_history.json \
+            > subsales_price_history.json 2>/dev/null || echo '{}' > subsales_price_history.json
+
       - name: Write Google service-account key from secret (private log only)
         if: ${{ vars.TELEGRAM_LOG_GSHEET_ID != '' }}
         working-directory: scripts/listings-pipeline

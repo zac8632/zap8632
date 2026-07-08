@@ -145,18 +145,60 @@ def condo_title(listing):
     return proj or area or "Property listing"
 
 
+def _variant_index(listing, n):
+    """Deterministic pick in range(n) from a stable per-listing seed, so the
+    SAME listing always gets the same phrasing on every rerun (no caption
+    flip-flopping day to day) while DIFFERENT listings vary - a feed of
+    daily posts shouldn't read like the same sentence copy-pasted."""
+    if n <= 1:
+        return 0
+    seed = str(listing.get("Listing URL") or listing.get("ID")
+               or listing.get("Title") or condo_title(listing))
+    return sum(seed.encode("utf-8")) % n
+
+
+# Several ways to say the same facts - picked deterministically per listing
+# (see _variant_index) so repeated exposure to the feed doesn't feel
+# templated. "{lead}" is "<N>-bedroom <Type>" or bare "<Type>" when no
+# bedroom count is known.
+_DESCRIPTOR_TEMPLATES = [
+    "{lead} {action} in {area}",
+    "{lead} {action}, located in {area}",
+    "Now {action}: {lead_lower} in {area}",
+    "{area} — {lead} {action}",
+]
+_DESCRIPTOR_TEMPLATES_NO_AREA = [
+    "{lead} {action}",
+    "Now {action}: {lead_lower}",
+]
+
+
 def property_descriptor(listing):
     """A plain-prose one-liner - "3-bedroom Condominium for rent in
-    Tanjong Tokong" - built only from fields already on the listing."""
+    Tanjong Tokong" - built only from fields already on the listing, with
+    the phrasing varied per-listing (see _variant_index) instead of one
+    fixed sentence skeleton reused everywhere."""
     bd = _clean(listing.get("Bedrooms"))
     ptype = _clean(listing.get("Property Type")) or "property"
     area = _clean(listing.get("Location"))
     action = "for rent" if is_rental(listing) else "for sale"
     lead = f"{bd}-bedroom {ptype}" if bd else ptype
-    s = f"{lead} {action}"
-    if area:
-        s += f" in {area}"
+
+    templates = _DESCRIPTOR_TEMPLATES if area else _DESCRIPTOR_TEMPLATES_NO_AREA
+    tmpl = templates[_variant_index(listing, len(templates))]
+    # Lower the whole lead (not just its first letter) for the
+    # mid-sentence variant - a multi-word type like "Apartment /
+    # Condominium" would otherwise end up inconsistently cased
+    # ("apartment / Condominium").
+    s = tmpl.format(lead=lead, lead_lower=lead.lower(), action=action, area=area or "")
     return s[0].upper() + s[1:]
+
+
+def is_new_today(listing):
+    v = listing.get("Is New Today")
+    if isinstance(v, bool):
+        return v
+    return str(v).strip().lower() in ("true", "1", "yes")
 
 
 def specs_plain(listing):
@@ -228,17 +270,82 @@ def scrub_contact(text):
     return " ".join(x for x in kept if x)
 
 
+# Opening clauses for an auto-generated description, picked deterministically
+# per listing (see _variant_index). Each is completed with whichever facts
+# (bedrooms/bathrooms/size) the listing actually has - never invented ones.
+_AUTO_DESC_OPENERS = [
+    "This {ptype} in {area} offers",
+    "A well-appointed {ptype} {action} in {area}, featuring",
+    "Located in {area}, this {ptype} comes with",
+    "{ptype_cap} {action} in {area}, offering",
+]
+_AUTO_DESC_OPENERS_NO_AREA = [
+    "This {ptype} offers",
+    "A well-appointed {ptype} {action}, featuring",
+]
+
+
+def generate_description(listing):
+    """A short natural-language description built ONLY from the listing's
+    own structured fields (bedrooms/bathrooms/size/tenure/furnishing/area) -
+    used as a fallback when the owner left no free-text description at all.
+    Never invents amenities, condition, or claims that aren't in the data;
+    it just states the facts already on the listing in prose instead of a
+    bare spec line. Phrasing varies per-listing (see _variant_index) so a
+    feed of these doesn't read like the same form letter every time."""
+    ptype = (_clean(listing.get("Property Type")) or "property").lower()
+    area = _clean(listing.get("Location"))
+    action = "for rent" if is_rental(listing) else "for sale"
+    bd = _clean(listing.get("Bedrooms"))
+    ba = _clean(listing.get("Bathrooms"))
+    sz = _clean(listing.get("Size (sqft)"))
+    tenure = _clean(listing.get("Tenure"))
+    furnishing = _clean(listing.get("Furnishing"))
+
+    facts = []
+    if bd:
+        facts.append(f"{bd} bedroom{'s' if bd != '1' else ''}")
+    if ba:
+        facts.append(f"{ba} bathroom{'s' if ba != '1' else ''}")
+    if sz:
+        facts.append(f"{sz} sqft of built-up space")
+    if not facts and not area:
+        return None  # not enough on this listing to say anything real
+
+    if facts:
+        # These openers are written to be completed BY the fact list
+        # ("...featuring 3 bedrooms, 2 bathrooms.") - only used when there
+        # are facts to complete them with.
+        templates = _AUTO_DESC_OPENERS if area else _AUTO_DESC_OPENERS_NO_AREA
+        opener = templates[_variant_index(listing, len(templates))].format(
+            ptype=ptype, ptype_cap=ptype.capitalize(), action=action, area=area or "")
+        body = f"{opener} {', '.join(facts)}."
+    else:
+        # No bedroom/bathroom/size at all (e.g. a land listing) - a plain
+        # standalone sentence instead of a fact-expecting opener left
+        # dangling with nothing to complete it.
+        body = f"{ptype.capitalize()} {action} in {area}." if area else f"{ptype.capitalize()} {action}."
+    extras = [x for x in (tenure, furnishing) if x]
+    if extras:
+        body += " " + " · ".join(extras) + "."
+    return body
+
+
 def description_snippet(listing, max_chars=300):
     """A cleaned, contact-scrubbed excerpt of the owner's own description,
-    for the longer IG/FB captions. Returns None if nothing usable survives."""
+    for the longer IG/FB captions. Falls back to an auto-generated
+    fact-based description (generate_description) when the owner left no
+    usable text - the caption paragraph is never just silently dropped."""
     raw = _clean(listing.get("Description"))
-    if not raw:
-        return None
-    txt = scrub_contact(raw)
-    txt = re.sub(r"[•*►▪◆✦✅➤●]+", " ", txt)
-    txt = re.sub(r"\s+", " ", txt).strip(" -–—·|")
+    txt = ""
+    if raw:
+        txt = scrub_contact(raw)
+        txt = re.sub(r"[•*►▪◆✦✅➤●]+", " ", txt)
+        txt = re.sub(r"\s+", " ", txt).strip(" -–—·|")
     if len(txt) < 20:
-        return None
+        txt = generate_description(listing) or ""
+        if not txt:
+            return None
     if len(txt) > max_chars:
         cut = txt[:max_chars]
         end = max(cut.rfind(". "), cut.rfind("! "))
@@ -247,6 +354,43 @@ def description_snippet(listing, max_chars=300):
         else:
             txt = cut.rsplit(" ", 1)[0].rstrip(",.") + "…"
     return txt
+
+
+def _history_key(project, listing_type):
+    return f"{listing_type}:{project.strip().lower()}"
+
+
+def value_note(listing, price_history=None):
+    """"~15% below {project}'s recent asking psf" - a real, computed signal,
+    shown ONLY when the listing is genuinely priced below that project's own
+    price-per-sqft history. Reads the SAME persisted memory
+    subsales_listing_builder.py's anomaly checker writes to
+    (subsales_price_history.json, keyed "sale:<project>"/"rent:<project>"),
+    passed in by the caller - never fabricated, and returns None whenever
+    there isn't enough history to compare against."""
+    if not price_history:
+        return None
+    myr = price_num(listing.get("Price (RM)"))
+    sz = price_num(listing.get("Size (sqft)"))
+    proj = project_name(listing)
+    if not myr or not sz or not proj:
+        return None
+    listing_type = "rent" if is_rental(listing) else "sale"
+    entries = price_history.get(_history_key(proj, listing_type), [])
+    if len(entries) < 2:
+        return None
+    psf = myr / sz
+    s = sorted(entries)
+    median = s[len(s) // 2]
+    if median <= 0:
+        return None
+    ratio = psf / median
+    # Meaningfully cheaper (>=8%) but not so far below that it'd already be
+    # caught as a price anomaly (<0.4x median) - that's a data-quality flag
+    # to review, not a deal worth advertising.
+    if 0.4 <= ratio <= 0.92:
+        return f"~{round((1 - ratio) * 100)}% below {proj}'s recent asking psf"
+    return None
 
 
 CTA = "DM to arrange a viewing"
@@ -275,12 +419,17 @@ def headline(listing):
     return text or project_name(listing)
 
 
-def build_captions(listing):
+def build_captions(listing, price_history=None):
     """Per-platform captions, each written in that platform's native voice
     rather than one caption reused everywhere. Every caption leads with the
     condo name + area and states rent vs sale price explicitly. IG/FB get a
     longer, standardized structure; Threads and WhatsApp get shorter,
-    direct phrasings. All are contact-free and hashtag-free."""
+    direct phrasings. All are contact-free and hashtag-free.
+
+    price_history: optional dict (the same one subsales_listing_builder.py
+    persists to subsales_price_history.json) - when passed, a listing
+    genuinely priced below its project's recent psf gets a real "X% below"
+    callout (see value_note). Omit it and that line is simply skipped."""
     title = condo_title(listing)
     descriptor = property_descriptor(listing)
     snippet = description_snippet(listing)
@@ -289,9 +438,11 @@ def build_captions(listing):
     specs_p = specs_plain(listing)
     extras = extras_line(listing)
     price_block = (price_s + (f"  ({approx})" if approx else "")) if price_s else ""
+    value = value_note(listing, price_history)
+    fresh = is_new_today(listing)
 
     # ---- Instagram: standardized, longer carousel caption ----
-    ig = [f"🏙 {title}", ""]
+    ig = [("🆕 Just Listed\n" if fresh else "") + f"🏙 {title}", ""]
     ig.append(descriptor + ".")
     if snippet:
         ig += ["", snippet]
@@ -302,6 +453,8 @@ def build_captions(listing):
         ig.append(f"🏷 {extras}")
     if price_block:
         ig.append(f"💰 {price_block}")
+    if value:
+        ig.append(f"🔥 {value}")
     ig += ["", f"➡️ {SWIPE_PROMPT}", f"💬 {CTA}", f"📌 {SAVE_PROMPT}"]
     instagram = "\n".join(ig)
 
@@ -310,7 +463,8 @@ def build_captions(listing):
     lead = descriptor
     if price_s:
         lead += f" — {price_s}" if is_rental(listing) else f", priced at {price_s}"
-    fb = [title, "", lead + "."]
+    fb_title = ("🆕 Just Listed — " if fresh else "") + title
+    fb = [fb_title, "", lead + "."]
     if snippet:
         fb += ["", snippet]
     details = []
@@ -323,27 +477,37 @@ def build_captions(listing):
             details.append(f"• {label}: {val}{suffix}")
     if price_block:
         details.append(f"• Price: {price_block}")
+    if value:
+        details.append(f"• Value: {value}")
     if details:
         fb += ["", "Details:"] + details
     fb += ["", f"{CTA}."]
     facebook = "\n".join(fb)
 
     # ---- Threads: short, conversational, no emoji spam ----
-    th_lines = [title]
+    th_title = ("New: " if fresh else "") + title
+    th_lines = [th_title]
     sub = descriptor + (f" · {price_s}" if price_s else "")
     th_lines.append(sub)
     if specs_p:
         th_lines.append(specs_p)
+    if value:
+        th_lines.append(value.capitalize())
     th_lines.append(CTA)
     threads = "\n".join(th_lines)
 
     # ---- WhatsApp / Telegram broadcast: plain, direct, *bold* title ----
-    wa = [f"*{title}*"]
+    wa = []
+    if fresh:
+        wa.append("🆕 *Just Listed*")
+    wa.append(f"*{title}*")
     if price_s:
         wa.append(price_s)
     wa_specs = " · ".join([x for x in (specs_p, extras) if x])
     if wa_specs:
         wa.append(wa_specs)
+    if value:
+        wa.append(value.capitalize())
     if snippet:
         wa.append(description_snippet(listing, max_chars=180))
     wa.append(CTA)

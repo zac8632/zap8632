@@ -302,7 +302,7 @@ def _probe_url_variants(session, url, out_path_prefix):
             print(f"  [probe] {label}: {e}", file=sys.stderr)
 
 
-def fetch_and_download(session, row, out_dir, debug=False):
+def fetch_and_download(session, row, out_dir, debug=False, price_history=None):
     url = row.get("Listing URL", "")
     list_id = extract_list_id(url)
     if not list_id:
@@ -411,7 +411,7 @@ def fetch_and_download(session, row, out_dir, debug=False):
         listing["creatives"] = {
             k: [os.path.relpath(p, out_dir) for p in v] for k, v in creatives.items()
         }
-        caps = post_content.build_captions(row)
+        caps = post_content.build_captions(row, price_history=price_history)
         with open(os.path.join(listing_dir, "captions.md"), "w") as f:
             for plat, txt in caps.items():
                 f.write(f"## {plat}\n\n{txt}\n\n")
@@ -444,7 +444,19 @@ def main():
     ap.add_argument("--filter-only", action="store_true",
                     help="Print the qualifying set and exit (no network, no downloads).")
     ap.add_argument("--limit", type=int, default=0, help="Cap listings processed (0 = all).")
+    ap.add_argument("--price-history", default="subsales_price_history.json",
+                    help="Optional price-per-sqft memory (same file subsales_listing_builder.py "
+                         "writes) used to add a real 'X% below area psf' caption line when it "
+                         "applies. Missing file just means that line is skipped.")
     args = ap.parse_args()
+
+    price_history = {}
+    if os.path.exists(args.price_history):
+        try:
+            with open(args.price_history) as f:
+                price_history = json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            print(f"Could not read --price-history {args.price_history}: {e}", file=sys.stderr)
 
     df = pd.read_excel(args.input, sheet_name="All Listings", dtype=str)
     total = len(df)
@@ -485,7 +497,7 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     done = 0
     for idx, (_, r) in enumerate(q.iterrows()):
-        if fetch_and_download(session, r, args.out, debug=(idx == 0)):
+        if fetch_and_download(session, r, args.out, debug=(idx == 0), price_history=price_history):
             done += 1
         polite_sleep()
     print(f"Downloaded photos for {done}/{len(q)} qualifying listings into {args.out}/", file=sys.stderr)
