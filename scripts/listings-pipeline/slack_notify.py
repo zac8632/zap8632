@@ -22,13 +22,19 @@ import sys
 import urllib.request
 
 
-def notify(text, webhook=None):
+def notify(text, blocks=None, webhook=None):
+    """Post to Slack. `text` is the plain fallback (used for the mobile
+    notification preview and accessibility); `blocks` is an optional Block
+    Kit list for a nicely-formatted in-channel message."""
     webhook = webhook or os.environ.get("SLACK_WEBHOOK_URL")
     if not webhook:
         print("[slack] SLACK_WEBHOOK_URL not set - skipping notification.",
               file=sys.stderr)
         return False
-    payload = json.dumps({"text": text}).encode("utf-8")
+    body = {"text": text}
+    if blocks:
+        body["blocks"] = blocks
+    payload = json.dumps(body).encode("utf-8")
     req = urllib.request.Request(
         webhook, data=payload, headers={"Content-Type": "application/json"})
     try:
@@ -40,6 +46,27 @@ def notify(text, webhook=None):
         return False
 
 
+def header(text):
+    return {"type": "header", "text": {"type": "plain_text", "text": text, "emoji": True}}
+
+
+def section(mrkdwn):
+    return {"type": "section", "text": {"type": "mrkdwn", "text": mrkdwn}}
+
+
+def fields(pairs):
+    """A 2-column stat grid. pairs = [(label, value), ...]."""
+    return {"type": "section",
+            "fields": [{"type": "mrkdwn", "text": f"*{k}*\n{v}"} for k, v in pairs]}
+
+
+def context(mrkdwn):
+    return {"type": "context", "elements": [{"type": "mrkdwn", "text": mrkdwn}]}
+
+
+DIVIDER = {"type": "divider"}
+
+
 if __name__ == "__main__":
     ok = notify(" ".join(sys.argv[1:]) or "(empty message)")
-    sys.exit(0 if ok else 0)  # always exit 0 - notifications are best-effort
+    sys.exit(0)  # always exit 0 - notifications are best-effort
