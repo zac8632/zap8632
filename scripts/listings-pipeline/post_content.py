@@ -293,8 +293,23 @@ def scrub_contact(text):
 # text the operator pasted describing the listing. Matches are pulled out
 # VERBATIM from that text and reused, never paraphrased or invented, so a
 # caption only ever claims something like "sea view" when the owner
-# actually wrote it somewhere.
+# actually wrote it somewhere. Ordered by priority (checked in this order,
+# stops once max_n are found) - prestige/luxury signals researched from how
+# Singapore luxury listings frame high-end condos (private lift, dual key,
+# sky facilities, unblocked view, tenure prestige, MRT connectivity) come
+# first, general condition/location phrases after.
 _HIGHLIGHT_PATTERNS = [
+    re.compile(r"\bprivate\s+lift\b", re.I),
+    re.compile(r"\bdual\s*[- ]?key\b", re.I),
+    re.compile(r"\bpenthouse\b", re.I),
+    re.compile(r"\b(?:sky|infinity|roof-?top)\s*(?:terrace|pool|garden|deck)\b", re.I),
+    re.compile(r"\b(?:un(?:blocked|obstructed)|panoramic)\s+(?:sea\s+)?view\b", re.I),
+    re.compile(r"\b999[- ]?year\s+leasehold\b", re.I),
+    re.compile(r"\bfreehold\b", re.I),
+    re.compile(r"\b(?:walk(?:ing)?\s+distance|near(?:by)?|steps?\s+(?:away\s+)?from)\s+(?:to\s+)?(?:the\s+)?(?:mrt|lrt)\b", re.I),
+    re.compile(r"\bsmart\s+home\b", re.I),
+    re.compile(r"\bwalk-?in\s+wardrobe\b", re.I),
+    re.compile(r"\bconcierge\b", re.I),
     re.compile(r"\b(?:sea|pool|city|garden|park|mountain)\s+view\b", re.I),
     re.compile(r"\bcorner\s+(?:unit|lot)\b", re.I),
     re.compile(r"\b(?:fully|newly|recently)\s+renovated\b", re.I),
@@ -304,16 +319,17 @@ _HIGHLIGHT_PATTERNS = [
     re.compile(r"\bhigh\s+floor\b", re.I),
     re.compile(r"\blow\s+density\b", re.I),
     re.compile(r"\bfacing\s+(?:the\s+)?(?:sea|pool|park|city)\b", re.I),
-    re.compile(r"\bfreehold\b", re.I),
     re.compile(r"\brenovated\s+kitchen\b", re.I),
     re.compile(r"\bnear(?:by)?\s+[A-Za-z][\w &]{2,30}", re.I),
 ]
 
 
-def extract_highlights(text, max_n=2):
+def extract_highlights(text, max_n=3):
     """Pull up to max_n short, real selling-point phrases straight out of
     the owner's own free text - verbatim substrings, never paraphrased or
-    invented (see _HIGHLIGHT_PATTERNS)."""
+    invented (see _HIGHLIGHT_PATTERNS). max_n=3 (was 2) - the luxury segment
+    this pipeline targets benefits from a couple more concrete selling
+    points than a mass-market listing would need."""
     if not text:
         return []
     found, seen = [], set()
@@ -460,26 +476,20 @@ def _history_key(project, listing_type):
     return f"{listing_type}:{project.strip().lower()}"
 
 
-def value_note(listing, price_history=None):
-    """"~15% below {project}'s recent asking psf" - a real, computed signal,
-    shown ONLY when the listing is genuinely priced below that project's own
-    price-per-sqft history. Reads the SAME persisted memory
-    subsales_listing_builder.py's anomaly checker writes to
-    (subsales_price_history.json, keyed "sale:<project>"/"rent:<project>"),
-    passed in by the caller - never fabricated, and returns None whenever
-    there isn't enough history to compare against."""
-    if not price_history:
-        return None
-    myr = price_num(listing.get("Price (RM)"))
-    sz = price_num(listing.get("Size (sqft)"))
-    proj = project_name(listing)
-    if not myr or not sz or not proj:
-        return None
-    listing_type = "rent" if is_rental(listing) else "sale"
-    entries = price_history.get(_history_key(proj, listing_type), [])
+def _area_history_key(area, listing_type):
+    # "__area__" prefix namespaces this apart from real project names (a
+    # project would need to be literally named "__area__<area>" to collide,
+    # which won't happen) so both bucket kinds share the one price_history
+    # dict without a separate file/parameter.
+    return _history_key(f"__area__{area}", listing_type)
+
+
+def _psf_ratio_note(psf, entries, label):
+    """Shared comparison: psf vs. the median of `entries`, worded as a
+    "X% below {label}" note. Returns None when there isn't enough history
+    or the listing isn't meaningfully (but plausibly) cheaper."""
     if len(entries) < 2:
         return None
-    psf = myr / sz
     s = sorted(entries)
     median = s[len(s) // 2]
     if median <= 0:
@@ -489,13 +499,74 @@ def value_note(listing, price_history=None):
     # caught as a price anomaly (<0.4x median) - that's a data-quality flag
     # to review, not a deal worth advertising.
     if 0.4 <= ratio <= 0.92:
-        return f"~{round((1 - ratio) * 100)}% below {proj}'s recent asking psf"
+        return f"~{round((1 - ratio) * 100)}% below {label}"
     return None
+
+
+def value_note(listing, price_history=None):
+    """"~15% below {project}'s recent asking psf" - a real, computed signal,
+    shown ONLY when the listing is genuinely priced below recent history for
+    the SAME project. Falls back to an area-level comparison (still real
+    history, just less specific) when this project doesn't have its own 2+
+    prior listings to compare against yet - most projects only accumulate a
+    couple of listings a month, so project-only comparison left most
+    listings with no value signal at all. Reads the SAME persisted memory
+    subsales_listing_builder.py's anomaly checker writes to
+    (subsales_price_history.json) - never fabricated, and returns None
+    whenever there isn't enough history of either kind to compare against."""
+    if not price_history:
+        return None
+    myr = price_num(listing.get("Price (RM)"))
+    sz = price_num(listing.get("Size (sqft)"))
+    proj = project_name(listing)
+    area = _clean(listing.get("Location"))
+    if not myr or not sz or (not proj and not area):
+        return None
+    listing_type = "rent" if is_rental(listing) else "sale"
+    psf = myr / sz
+
+    if proj:
+        note = _psf_ratio_note(psf, price_history.get(_history_key(proj, listing_type), []),
+                                f"{proj}'s recent asking psf")
+        if note:
+            return note
+    if area:
+        return _psf_ratio_note(psf, price_history.get(_area_history_key(area, listing_type), []),
+                                f"{area}'s recent asking psf")
+    return None
+
+
+def price_drop_note(listing):
+    """"Reduced from RM X to RM Y" - a genuinely strong, 100%-factual
+    urgency signal when this listing's price has actually dropped since it
+    was first tracked. Reads a "Price Change" field precomputed by
+    subsales_listing_builder.py (which is the only place with the
+    persistent per-listing price history needed to detect a drop) - simply
+    returns None for any listing that doesn't have one, so this is a no-op
+    outside the Subsales flow rather than a crash."""
+    return _clean(listing.get("Price Change"))
 
 
 CTA = "DM to arrange a viewing"
 SAVE_PROMPT = "Save this for later"
 SWIPE_PROMPT = "Swipe for more photos"
+
+# Several CTA phrasings in the same register (this pipeline only ever posts
+# high-end/luxury-segment listings, so there's no separate "budget" tone to
+# switch between) - picked deterministically per listing (see
+# _variant_index) so a feed of daily posts doesn't end every single one
+# with the exact same sentence.
+_CTA_POOL = [
+    "DM to arrange a viewing",
+    "Message us to arrange a private viewing",
+    "Enquire for a private viewing",
+    "Reach out to schedule a viewing",
+    "Contact us for an exclusive viewing",
+]
+
+
+def cta_for(listing):
+    return _CTA_POOL[_variant_index(listing, len(_CTA_POOL))]
 
 
 def headline(listing):
@@ -544,10 +615,27 @@ def build_captions(listing, price_history=None):
     extras = extras_line(listing)
     price_block = (price_s + (f"  ({approx})" if approx else "")) if price_s else ""
     value = value_note(listing, price_history)
+    drop = price_drop_note(listing)
     fresh = is_new_today(listing)
+    cta = cta_for(listing)
+
+    # A single strongest, scroll-stopping fact for the very first line - IG
+    # (and most feeds) truncate the caption at ~125-140 characters before
+    # "more", so whatever's most compelling needs to be at the very top,
+    # not buried after the title and spec list. Priority: a real price cut
+    # beats a value callout beats a highlight pulled from the owner's text -
+    # each is a genuine, sourced fact, never invented for effect. Whichever
+    # one becomes the hook is NOT repeated again lower in the caption.
+    top_highlight = (extract_highlights(_clean(listing.get("Description")), max_n=1) or [None])[0]
+    hook_source = "drop" if drop else "value" if value else "highlight" if top_highlight else None
+    hook = {"drop": drop, "value": value, "highlight": top_highlight}.get(hook_source)
 
     # ---- Instagram: standardized, longer carousel caption ----
-    ig = [("🆕 Just Listed\n" if fresh else "") + f"🏙 {title}", ""]
+    ig = []
+    if hook:
+        ig.append(f"🔥 {hook[0].upper()}{hook[1:]}")
+    ig.append(("🆕 Just Listed\n" if fresh else "") + f"🏙 {title}")
+    ig.append("")
     ig.append(descriptor + ".")
     if snippet_long:
         ig += ["", snippet_long]
@@ -558,9 +646,11 @@ def build_captions(listing, price_history=None):
         ig.append(f"🏷 {extras}")
     if price_block:
         ig.append(f"💰 {price_block}")
-    if value:
-        ig.append(f"🔥 {value}")
-    ig += ["", f"➡️ {SWIPE_PROMPT}", f"💬 {CTA}", f"📌 {SAVE_PROMPT}"]
+    if drop and hook_source != "drop":
+        ig.append(f"📉 {drop}")
+    if value and hook_source != "value":
+        ig.append(f"💎 {value}")
+    ig += ["", f"➡️ {SWIPE_PROMPT}", f"💬 {cta}", f"📌 {SAVE_PROMPT}"]
     instagram = "\n".join(ig)
 
     # ---- Facebook: longer, prose intro + a scannable detail list. FB has
@@ -582,11 +672,13 @@ def build_captions(listing, price_history=None):
             details.append(f"• {label}: {val}{suffix}")
     if price_block:
         details.append(f"• Price: {price_block}")
+    if drop:
+        details.append(f"• Price change: {drop}")
     if value:
         details.append(f"• Value: {value}")
     if details:
         fb += ["", "Details:"] + details
-    fb += ["", f"{CTA}."]
+    fb += ["", f"{cta}."]
     facebook = "\n".join(fb)
 
     # ---- Threads: short, conversational, no emoji spam ----
@@ -596,9 +688,11 @@ def build_captions(listing, price_history=None):
     th_lines.append(sub)
     if specs_p:
         th_lines.append(specs_p)
+    if drop:
+        th_lines.append(drop.capitalize())
     if value:
         th_lines.append(value.capitalize())
-    th_lines.append(CTA)
+    th_lines.append(cta)
     threads = "\n".join(th_lines)
 
     # ---- WhatsApp / Telegram broadcast: plain, direct, *bold* title ----
@@ -611,20 +705,22 @@ def build_captions(listing, price_history=None):
     wa_specs = " · ".join([x for x in (specs_p, extras) if x])
     if wa_specs:
         wa.append(wa_specs)
+    if drop:
+        wa.append(drop.capitalize())
     if value:
         wa.append(value.capitalize())
     if snippet:
         wa.append(description_snippet(listing, max_chars=180))
-    wa.append(CTA)
+    wa.append(cta)
     whatsapp = "\n".join(wa)
 
     # ---- TikTok / Story kept for back-compat (not a focus platform) ----
     tk = [title]
     if price_s:
         tk.append(price_s + (f" · {specs_p}" if specs_p else ""))
-    tk += [f"➡️ {SWIPE_PROMPT}", CTA]
+    tk += [f"➡️ {SWIPE_PROMPT}", cta]
     tiktok = "\n".join(tk)
-    story = f"{title}\n{price_s}\n{CTA}" if price_s else f"{title}\n{CTA}"
+    story = f"{title}\n{price_s}\n{cta}" if price_s else f"{title}\n{cta}"
 
     return {"instagram": instagram, "facebook": facebook, "threads": threads,
             "whatsapp": whatsapp, "tiktok": tiktok, "story": story}
