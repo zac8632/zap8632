@@ -632,6 +632,16 @@ def main():
             f"Done - '{listing.get('Title') or listing['_batch_id']}' is ready above. "
             f"It'll also show up in Airtable shortly.")
 
+    # Best-effort Slack ping (no-op unless SLACK_WEBHOOK_URL is set).
+    try:
+        from slack_notify import notify
+        titles = [listing.get("Title") or listing["_batch_id"] for listing in finalized]
+        lines = [f"📩 *Telegram listing processed* — {len(titles)} finalized"]
+        lines += [f"• {t}" for t in titles[:10]]
+        notify("\n".join(lines))
+    except Exception as e:  # noqa: BLE001 - notification is best-effort
+        print(f"[slack] skipped: {e}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()

@@ -370,6 +370,21 @@ def main():
             flagged_df.to_excel(writer, sheet_name="Flagged", index=False)
         print(f"Wrote {args.out} (no --gsheet-id/--gsheet-key given)", file=sys.stderr)
 
+    # Best-effort Slack ping (no-op unless SLACK_WEBHOOK_URL is set).
+    try:
+        from slack_notify import notify
+
+        lines = [
+            "🧾 *Subsales queue built*",
+            f"• {len(clean_rows['sale'])} for sale",
+            f"• {len(clean_rows['rent'])} for rent",
+        ]
+        if flagged_rows:
+            lines.append(f"• ⚠️ {len(flagged_rows)} flagged as price anomalies (excluded)")
+        notify("\n".join(lines))
+    except Exception as e:  # noqa: BLE001 - notification is best-effort
+        print(f"[slack] skipped: {e}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()

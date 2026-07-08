@@ -47,6 +47,7 @@ jobs:
         env:
           PAGES: ${{ github.event.inputs.pages || '200' }}
           STATEWIDE: ${{ github.event.inputs.statewide || 'true' }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           STATEWIDE_FLAG=""
           if [ "$STATEWIDE" = "true" ]; then STATEWIDE_FLAG="--statewide"; fi
