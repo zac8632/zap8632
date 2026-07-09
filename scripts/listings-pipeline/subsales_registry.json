@@ -1180,5 +1180,29 @@
         "price": 1500.0
       }
     ]
+  },
+  "115215459": {
+    "ref": "PPM-1109",
+    "mudah_url": "https://www.mudah.my/rainbow-paradise-1-bedroom-service-apartment-for-rent-115215459.htm",
+    "title": "Rainbow Paradise, Tanjung Bungah",
+    "first_seen": "2026-07-09",
+    "price_log": [
+      {
+        "date": "2026-07-09",
+        "price": 1800.0
+      }
+    ]
+  },
+  "115206838": {
+    "ref": "PPM-1110",
+    "mudah_url": "https://www.mudah.my/pangsapuri-800kps-115206838.htm",
+    "title": "Pangsapuri Warisan Tanjung, Tanjong Tokong",
+    "first_seen": "2026-07-09",
+    "price_log": [
+      {
+        "date": "2026-07-09",
+        "price": 1500.0
+      }
+    ]
   }
 }
