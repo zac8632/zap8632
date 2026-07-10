@@ -326,6 +326,10 @@
       {
         "date": "2026-07-08",
         "price": 1250.0
+      },
+      {
+        "date": "2026-07-10",
+        "price": 1150.0
       }
     ]
   },
@@ -1202,6 +1206,42 @@
       {
         "date": "2026-07-09",
         "price": 1500.0
+      }
+    ]
+  },
+  "115217342": {
+    "ref": "PPM-1111",
+    "mudah_url": "https://www.mudah.my/for-sale-corner-single-storey-terrace-house-115217342.htm",
+    "title": "FOR SALE - Corner Single Storey Terrace House, Tanjong Tokong",
+    "first_seen": "2026-07-10",
+    "price_log": [
+      {
+        "date": "2026-07-10",
+        "price": 1390000.0
+      }
+    ]
+  },
+  "115216105": {
+    "ref": "PPM-1112",
+    "mudah_url": "https://www.mudah.my/pangsapuri-untuk-disewa-115216105.htm",
+    "title": "Pangsapuri Tanjung Tokong Fasa 4A, Tanjong Tokong",
+    "first_seen": "2026-07-10",
+    "price_log": [
+      {
+        "date": "2026-07-10",
+        "price": 1500.0
+      }
+    ]
+  },
+  "115215687": {
+    "ref": "PPM-1113",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-tanjung-tokong-penang-115215687.htm",
+    "title": "Tri Pinnacle, Tanjung Tokong, Penang, Tanjong Tokong",
+    "first_seen": "2026-07-10",
+    "price_log": [
+      {
+        "date": "2026-07-10",
+        "price": 1400.0
       }
     ]
   }
