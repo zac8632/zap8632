@@ -1,0 +1,100 @@
+name: Deploy Telegram Webhook Worker
+
+# Deploys the Cloudflare Worker under workers/telegram-webhook/ and (unless
+# explicitly disabled) registers its URL as the Telegram bot's webhook -
+# see workers/telegram-webhook/README.md for the one-time secrets setup
+# required before this can succeed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      register_webhook:
+        description: "Also (re-)register the deployed URL as the Telegram bot's webhook"
+        required: false
+        default: "true"
+  push:
+    branches: [main]
+    paths:
+      - "workers/telegram-webhook/**"
+      - ".github/workflows/deploy-telegram-webhook.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: workers/telegram-webhook
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install wrangler
+        run: npm install --no-save wrangler@^3.90.0
+
+      - name: Deploy Worker and capture its URL
+        id: deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          npx wrangler deploy | tee deploy_output.txt
+          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.workers\.dev' deploy_output.txt | head -1)
+          if [ -z "$URL" ]; then
+            echo "::error::Could not find the deployed Worker URL in wrangler's output - check CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID are set correctly."
+            exit 1
+          fi
+          echo "worker_url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed to: $URL"
+
+      - name: Set Worker secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "${{ secrets.TELEGRAM_WEBHOOK_SECRET }}" ] || [ -z "${{ secrets.GH_DISPATCH_TOKEN }}" ]; then
+            echo "::error::TELEGRAM_WEBHOOK_SECRET and/or GH_DISPATCH_TOKEN repo secrets are not set - see workers/telegram-webhook/README.md"
+            exit 1
+          fi
+          printf '%s' "${{ secrets.TELEGRAM_WEBHOOK_SECRET }}" | npx wrangler secret put TELEGRAM_SECRET_TOKEN
+          printf '%s' "${{ secrets.GH_DISPATCH_TOKEN }}" | npx wrangler secret put GH_DISPATCH_TOKEN
+
+      # github.event.inputs is unset on push-triggered runs (same trap fixed
+      # elsewhere in this repo's workflows) - default to registering unless
+      # a manual dispatch explicitly opted out.
+      - name: Register webhook with Telegram
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.register_webhook != 'false' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
+          WORKER_URL: ${{ steps.deploy.outputs.worker_url }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+            echo "::error::TELEGRAM_BOT_TOKEN secret not set"
+            exit 1
+          fi
+          RESP=$(curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
+            -d "url=${WORKER_URL}/telegram-webhook" \
+            -d "secret_token=${TELEGRAM_WEBHOOK_SECRET}" \
+            -d 'allowed_updates=["message"]')
+          echo "$RESP"
+          echo "$RESP" | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          if not d.get('ok'):
+              print('::error::setWebhook failed - see response above')
+              sys.exit(1)
+          print(f\"Webhook registered: {d.get('description', '')}\")
+          "
+
+      - name: Print webhook status for verification
+        if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.register_webhook != 'false' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          curl -sS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo" | python3 -m json.tool

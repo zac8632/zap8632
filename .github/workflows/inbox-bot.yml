@@ -1,20 +1,40 @@
 name: Inbox Bot
 
-# Polls a Telegram bot for personally-submitted listings (WhatsApp text +
-# photos forwarded into Telegram), extracts what it can from the free text,
-# downloads photos at full original quality (no watermark - this is the
-# whole point of this second source vs mudah), and runs them through the
-# same photo_curate.py + post_content.py pipeline.
+# Real-time ingestion via a Telegram webhook: the Cloudflare Worker under
+# workers/telegram-webhook/ receives each Telegram message the instant it
+# arrives and fires a repository_dispatch event here (typically starts
+# within seconds - GitHub treats dispatch triggers as high-priority, unlike
+# `schedule`, which was measured to run ~2 hours late on average for a
+# */10 cron on this repo - a GitHub platform throttling behavior, not
+# something fixable in workflow config). Extracts what it can from the free
+# text, downloads photos at full original quality (no watermark - the whole
+# point of this second source vs mudah), and runs them through the same
+# photo_curate.py + post_content.py pipeline.
+#
+# getUpdates (the old polling method) and a registered webhook are MUTUALLY
+# EXCLUSIVE - Telegram 409s a getUpdates call while a webhook is active. So:
+#   - repository_dispatch runs ingest the ONE update the Worker forwarded
+#     (--update-json), no polling.
+#   - The schedule below is now just a SAFETY NET that flushes any batch
+#     that's gone idle past BATCH_IDLE_SECONDS without an explicit "done"
+#     message ever arriving to trigger a fresh dispatch (--no-poll - it
+#     never touches Telegram's API, just checks already-buffered batches).
+#     A batch finalizes INSTANTLY via the webhook path the moment someone
+#     types "done", so this sweep is only for the silent-timeout case.
+#   - workflow_dispatch defaults to the same flush-only behavior (safe even
+#     with a live webhook); set mode=poll only if you've temporarily
+#     removed the webhook (BotFather/deleteWebhook) for manual testing.
 #
 # Setup done: TELEGRAM_BOT_TOKEN repo secret is set, the operator's own
 # chat_id is whitelisted in ALLOWED_CHAT_IDS in telegram_listings.py, the
 # private agent-contact log is wired up via the TELEGRAM_LOG_GSHEET_ID repo
-# variable, and finalized listings sync to Airtable (see context.md).
-#
-# Runs on a short interval since it's just polling getUpdates (cheap, no
-# long-running process needed).
+# variable, finalized listings sync to Airtable, and the Cloudflare Worker
+# webhook is deployed and registered with Telegram (see
+# workers/telegram-webhook/README.md).
 
 on:
+  repository_dispatch:
+    types: [telegram-update]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -25,11 +45,17 @@ on:
         description: "Process pending batches immediately (ignore idle timer) - for testing"
         required: false
         default: "true"
+      mode:
+        description: "flush (safe, default - no Telegram API calls) or poll (classic getUpdates - only if the webhook is currently NOT registered)"
+        required: false
+        default: "flush"
       airtable_base_id:
         description: "Airtable base ID to sync finalized listings into (blank = skip Airtable sync)"
         required: false
         default: "appwkcMDwzNN9NTuo"
   schedule:
+    # Safety-net idle-batch flush only (see header) - no Telegram API calls,
+    # so this stays cheap even though GitHub may run it late.
     - cron: "*/10 * * * *"
 
 # Queues overlapping runs instead of racing on data/telegram-bot-state and
@@ -80,6 +106,21 @@ jobs:
         working-directory: scripts/listings-pipeline
         run: echo '${{ secrets.GSHEET_SERVICE_ACCOUNT_JSON }}' > gsheet_key.json
 
+      - name: Write incoming webhook update to file (repository_dispatch only)
+        if: ${{ github.event_name == 'repository_dispatch' }}
+        working-directory: scripts/listings-pipeline
+        env:
+          # env-var indirection (not inlined into the shell command) so the
+          # update's own text content can never be interpreted as shell -
+          # printf '%s' with a quoted var is injection-safe regardless of
+          # what's in it.
+          UPDATE_JSON: ${{ toJSON(github.event.client_payload.update) }}
+        run: |
+          mkdir -p telegram_input
+          printf '%s' "$UPDATE_JSON" > telegram_input/webhook_update.json
+          python3 -c "import json; json.load(open('telegram_input/webhook_update.json'))" \
+            || { echo "::error::webhook_update.json is not valid JSON - client_payload malformed"; exit 1; }
+
       - name: Poll Telegram and process any finalized listings
         working-directory: scripts/listings-pipeline
         env:
@@ -94,10 +135,25 @@ jobs:
           # workflow_dispatch testing runs.
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.dry_run || 'true') || 'false' }}
           FORCE_FLUSH: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.force_flush || 'true') || 'false' }}
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_MODE: ${{ github.event.inputs.mode || 'flush' }}
         run: |
           FLAGS=""
           if [ "$DRY_RUN" = "true" ]; then FLAGS="$FLAGS --dry-run"; fi
           if [ "$FORCE_FLUSH" = "true" ]; then FLAGS="$FLAGS --force-flush"; fi
+          # Ingestion mode: repository_dispatch carries exactly one real
+          # Telegram update from the webhook; schedule is a flush-only
+          # safety net (see the workflow header - getUpdates 409-conflicts
+          # with the active webhook); workflow_dispatch defaults to the same
+          # safe flush-only behavior unless mode=poll is explicitly chosen
+          # (only valid while the webhook is NOT registered).
+          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
+            FLAGS="$FLAGS --update-json telegram_input/webhook_update.json"
+          elif [ "$EVENT_NAME" = "schedule" ]; then
+            FLAGS="$FLAGS --no-poll"
+          elif [ "$DISPATCH_MODE" != "poll" ]; then
+            FLAGS="$FLAGS --no-poll"
+          fi
           python telegram_listings.py \
             --out telegram_input \
             --state telegram_input/telegram_state.json \
