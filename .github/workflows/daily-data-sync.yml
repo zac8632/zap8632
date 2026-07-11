@@ -35,7 +35,16 @@ jobs:
         working-directory: scripts/listings-pipeline
         run: |
           git fetch origin data/penang-owners-scrape || true
-          git show origin/data/penang-owners-scrape:penang_seen_listings.json \
+          # git show <rev>:<path> resolves <path> relative to the REPO ROOT,
+          # not this step's working-directory - the committed file actually
+          # lives at scripts/listings-pipeline/penang_seen_listings.json, so
+          # the old bare "penang_seen_listings.json" path here was silently
+          # failing on every single run (falling back to "{}"), meaning the
+          # dedup registry never actually persisted across days - every
+          # listing showed as "new" every run since this workflow was
+          # created. Confirmed live: every entry in the committed file had
+          # today's date, none carried over from prior days.
+          git show origin/data/penang-owners-scrape:scripts/listings-pipeline/penang_seen_listings.json \
             > penang_seen_listings.json 2>/dev/null || echo "{}" > penang_seen_listings.json
 
       - name: Write Google service-account key from secret
