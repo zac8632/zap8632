@@ -1,0 +1,11 @@
+name = "penang-telegram-webhook"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+
+# Plain (non-secret) config the Worker reads via env.* - which repo to
+# dispatch to. The actual credentials (TELEGRAM_SECRET_TOKEN,
+# GH_DISPATCH_TOKEN) are set as Worker secrets by the deploy workflow, never
+# committed here.
+[vars]
+GH_OWNER = "zac8632"
+GH_REPO = "zap8632"

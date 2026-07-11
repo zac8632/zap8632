@@ -310,11 +310,37 @@ def fetch_new_updates(token, offset):
 
 
 def poll_and_buffer(token, state):
-    """Fetch new Telegram messages since the last saved offset and buffer
-    them per chat. Does not process/finalize anything yet - see
-    process_batches()."""
+    """Fetch new Telegram messages since the last saved offset (via
+    getUpdates long-polling) and buffer them per chat. Does not process/
+    finalize anything yet - see process_batches().
+
+    NOTE: getUpdates and a Telegram webhook are mutually exclusive - once a
+    webhook is registered (see the Cloudflare Worker under
+    workers/telegram-webhook/), Telegram rejects getUpdates calls with a 409
+    Conflict. This path is now only used by --dry-run/manual testing
+    invocations that explicitly want to poll instead of relying on the
+    webhook. The scheduled safety-net run (see inbox-bot.yml) does NOT call
+    this - it only flushes already-buffered batches. Real-time ingestion of
+    new messages goes through buffer_single_update() instead."""
     offset = state.get("last_update_id", 0)
     updates = fetch_new_updates(token, offset)
+    return buffer_updates(token, state, updates)
+
+
+def buffer_single_update(token, state, update):
+    """Webhook entry point: ingest exactly one already-fetched Telegram
+    Update (the JSON body Telegram POSTs to our webhook) - no network call
+    to Telegram needed to fetch it, unlike poll_and_buffer(). Shares all the
+    same per-chat batching/whitelist/ack logic as the polling path."""
+    return buffer_updates(token, state, [update])
+
+
+def buffer_updates(token, state, updates):
+    """Shared batching logic for both the polling (poll_and_buffer) and
+    webhook (buffer_single_update) ingestion paths - group messages into
+    per-(chat,sender) batches, enforce the chat_id whitelist, and send
+    running-tally acks. Does not process/finalize anything yet - see
+    process_batches()."""
     pending = state.setdefault("pending", {})
 
     for upd in updates:
@@ -555,6 +581,17 @@ def main():
                      help="Optional price-per-sqft memory (same file subsales_listing_builder.py "
                           "writes) used to add a real 'X% below area psf' caption line when it "
                           "applies. Missing file just means that line is skipped.")
+    ap.add_argument("--update-json",
+                     help="Path to a single Telegram Update JSON file to ingest directly (the "
+                          "Cloudflare Worker webhook writes this) instead of polling getUpdates. "
+                          "Mutually exclusive with getUpdates - Telegram rejects getUpdates calls "
+                          "while a webhook is registered, so this is now the real-time ingestion "
+                          "path; omit it for a flush-only run (process already-buffered batches "
+                          "without fetching anything new - used by the scheduled safety net).")
+    ap.add_argument("--no-poll", action="store_true",
+                     help="Skip getUpdates entirely (flush-only run) even without --update-json. "
+                          "Set automatically by inbox-bot.yml's scheduled (non-webhook) runs, "
+                          "since getUpdates would otherwise 409-conflict with the active webhook.")
     args = ap.parse_args()
 
     price_history = {}
@@ -572,7 +609,15 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     state = load_state(args.state)
-    state = poll_and_buffer(token, state)
+
+    if args.update_json:
+        with open(args.update_json) as f:
+            update = json.load(f)
+        state = buffer_single_update(token, state, update)
+    elif not args.no_poll:
+        state = poll_and_buffer(token, state)
+    # else: flush-only run - don't touch Telegram's API at all, just process
+    # whatever's already buffered in state["pending"].
 
     if args.force_flush:
         for batch in state.get("pending", {}).values():
