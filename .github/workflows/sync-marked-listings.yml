@@ -14,11 +14,13 @@ on:
         description: "Airtable base ID"
         required: false
         default: "appwkcMDwzNN9NTuo"
-  # Run shortly after the daily scrape so a mark made earlier in the day
-  # gets picked up without waiting for tomorrow's run. Uncomment once
-  # confirmed working via a manual test.
-  # schedule:
-  #   - cron: "30 0 * * *"
+  # Runs shortly after the daily scrape (00:00 UTC) and the Subsales build
+  # (00:15 UTC), so a "Mark for Marketing" tick made earlier in the day
+  # gets picked up the same day instead of waiting for tomorrow's run.
+  # Confirmed working via a manual test run (exits cleanly with "No
+  # newly-marked listings to sync" when nothing is marked).
+  schedule:
+    - cron: "30 0 * * *"
 
 jobs:
   sync:
