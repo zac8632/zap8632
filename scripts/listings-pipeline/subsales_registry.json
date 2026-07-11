@@ -1244,5 +1244,17 @@
         "price": 1400.0
       }
     ]
+  },
+  "115228334": {
+    "ref": "PPM-1114",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-tanjung-tokong-direct-owner-115228334.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-07-11",
+    "price_log": [
+      {
+        "date": "2026-07-11",
+        "price": 2000.0
+      }
+    ]
   }
 }
