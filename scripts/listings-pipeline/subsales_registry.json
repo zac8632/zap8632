@@ -1284,5 +1284,17 @@
         "price": 1100.0
       }
     ]
+  },
+  "115243103": {
+    "ref": "PPM-1117",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115243103.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-07-13",
+    "price_log": [
+      {
+        "date": "2026-07-13",
+        "price": 2600.0
+      }
+    ]
   }
 }
