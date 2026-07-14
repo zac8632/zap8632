@@ -1296,5 +1296,53 @@
         "price": 2600.0
       }
     ]
+  },
+  "115251195": {
+    "ref": "PPM-1118",
+    "mudah_url": "https://www.mudah.my/villa-batu-bukit-at-tg-tokong-rare-unit-for-rent-115251195.htm",
+    "title": "Villa Batu Bukit, Tanjong Tokong",
+    "first_seen": "2026-07-14",
+    "price_log": [
+      {
+        "date": "2026-07-14",
+        "price": 1800.0
+      }
+    ]
+  },
+  "115246753": {
+    "ref": "PPM-1119",
+    "mudah_url": "https://www.mudah.my/i-santorini-nice-view-corner-lot-115246753.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-07-14",
+    "price_log": [
+      {
+        "date": "2026-07-14",
+        "price": 1400.0
+      }
+    ]
+  },
+  "115246504": {
+    "ref": "PPM-1120",
+    "mudah_url": "https://www.mudah.my/apartment-for-rent-at-puncak-erskine-115246504.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-07-14",
+    "price_log": [
+      {
+        "date": "2026-07-14",
+        "price": 950.0
+      }
+    ]
+  },
+  "115246489": {
+    "ref": "PPM-1121",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-at-tanjung-tokong-owner-115246489.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-07-14",
+    "price_log": [
+      {
+        "date": "2026-07-14",
+        "price": 1100.0
+      }
+    ]
   }
 }
