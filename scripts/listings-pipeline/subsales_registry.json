@@ -236,6 +236,10 @@
       {
         "date": "2026-07-08",
         "price": 1500.0
+      },
+      {
+        "date": "2026-07-15",
+        "price": 1400.0
       }
     ]
   },
@@ -678,6 +682,10 @@
       {
         "date": "2026-07-08",
         "price": 750.0
+      },
+      {
+        "date": "2026-07-15",
+        "price": 650.0
       }
     ]
   },
@@ -1342,6 +1350,18 @@
       {
         "date": "2026-07-14",
         "price": 1100.0
+      }
+    ]
+  },
+  "115259661": {
+    "ref": "PPM-1122",
+    "mudah_url": "https://www.mudah.my/tiara-view-condo-nice-balcony-view-tanjung-bungah-115259661.htm",
+    "title": "Tiara View, Tanjung Bungah",
+    "first_seen": "2026-07-15",
+    "price_log": [
+      {
+        "date": "2026-07-15",
+        "price": 1000.0
       }
     ]
   }
