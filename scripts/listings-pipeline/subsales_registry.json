@@ -1364,5 +1364,53 @@
         "price": 1000.0
       }
     ]
+  },
+  "115271235": {
+    "ref": "PPM-1123",
+    "mudah_url": "https://www.mudah.my/tanjung-tokong-apartment-fully-furnished-for-rent-115271235.htm",
+    "title": "Villa Batu Bukit, Tanjong Tokong",
+    "first_seen": "2026-07-16",
+    "price_log": [
+      {
+        "date": "2026-07-16",
+        "price": 1800.0
+      }
+    ]
+  },
+  "115270955": {
+    "ref": "PPM-1124",
+    "mudah_url": "https://www.mudah.my/palm-court-pangsapuri-nipah-for-rent-tanjong-tokong-penang-115270955.htm",
+    "title": "Palm Court (Pangsapuri Nipah), Tanjong Tokong",
+    "first_seen": "2026-07-16",
+    "price_log": [
+      {
+        "date": "2026-07-16",
+        "price": 1300.0
+      }
+    ]
+  },
+  "115268581": {
+    "ref": "PPM-1125",
+    "mudah_url": "https://www.mudah.my/taman-kristal-3-room-apartment-unfurnished-near-gurney-tanjung-t-115268581.htm",
+    "title": "Taman Kristal, Tanjong Tokong",
+    "first_seen": "2026-07-16",
+    "price_log": [
+      {
+        "date": "2026-07-16",
+        "price": 1300.0
+      }
+    ]
+  },
+  "115268526": {
+    "ref": "PPM-1126",
+    "mudah_url": "https://www.mudah.my/taman-bukit-erskine-for-rent-direct-owner-115268526.htm",
+    "title": "Taman Bukit Erskine, Tanjong Tokong",
+    "first_seen": "2026-07-16",
+    "price_log": [
+      {
+        "date": "2026-07-16",
+        "price": 1300.0
+      }
+    ]
   }
 }
