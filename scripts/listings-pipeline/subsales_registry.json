@@ -1412,5 +1412,53 @@
         "price": 1300.0
       }
     ]
+  },
+  "115286120": {
+    "ref": "PPM-1127",
+    "mudah_url": "https://www.mudah.my/simfonia-3-storey-terrace-house-3600sf-fully-furnished-115286120.htm",
+    "title": "SIMFONIA- 3 STOREY TERRACE HOUSE 3600sf FULLY FURNISHED, Tanjong Tokong",
+    "first_seen": "2026-07-18",
+    "price_log": [
+      {
+        "date": "2026-07-18",
+        "price": 2000000.0
+      }
+    ]
+  },
+  "115288834": {
+    "ref": "PPM-1128",
+    "mudah_url": "https://www.mudah.my/flat-uda-tanjung-tokong-115288834.htm",
+    "title": "Flat Uda Tanjung Tokong, Tanjong Tokong",
+    "first_seen": "2026-07-18",
+    "price_log": [
+      {
+        "date": "2026-07-18",
+        "price": 700.0
+      }
+    ]
+  },
+  "115287977": {
+    "ref": "PPM-1129",
+    "mudah_url": "https://www.mudah.my/ready-for-rent-115287977.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-07-18",
+    "price_log": [
+      {
+        "date": "2026-07-18",
+        "price": 750.0
+      }
+    ]
+  },
+  "115284629": {
+    "ref": "PPM-1130",
+    "mudah_url": "https://www.mudah.my/straits-residence-for-rent-fully-furnished-with-stunning-sea-city-115284629.htm",
+    "title": "Straits Residences @ Seri Tanjung Pinang, Tanjong Tokong",
+    "first_seen": "2026-07-18",
+    "price_log": [
+      {
+        "date": "2026-07-18",
+        "price": 6500.0
+      }
+    ]
   }
 }
