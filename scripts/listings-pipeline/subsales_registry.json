@@ -1460,5 +1460,17 @@
         "price": 6500.0
       }
     ]
+  },
+  "115294374": {
+    "ref": "PPM-1131",
+    "mudah_url": "https://www.mudah.my/taman-bukit-erskine-tanjung-tokong-115294374.htm",
+    "title": "Taman Bukit Erskine, Tanjong Tokong",
+    "first_seen": "2026-07-19",
+    "price_log": [
+      {
+        "date": "2026-07-19",
+        "price": 1350.0
+      }
+    ]
   }
 }
