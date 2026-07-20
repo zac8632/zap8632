@@ -334,6 +334,10 @@
       {
         "date": "2026-07-10",
         "price": 1150.0
+      },
+      {
+        "date": "2026-07-20",
+        "price": 1200.0
       }
     ]
   },
@@ -1470,6 +1474,66 @@
       {
         "date": "2026-07-19",
         "price": 1350.0
+      }
+    ]
+  },
+  "115306527": {
+    "ref": "PPM-1132",
+    "mudah_url": "https://www.mudah.my/the-tamarind-seaview-1047sq-ft-3-rooms-direct-owner-115306527.htm",
+    "title": "The Tamarind @ Seri Tanjung Pinang, Tanjong Tokong",
+    "first_seen": "2026-07-20",
+    "price_log": [
+      {
+        "date": "2026-07-20",
+        "price": 3200.0
+      }
+    ]
+  },
+  "115303758": {
+    "ref": "PPM-1133",
+    "mudah_url": "https://www.mudah.my/granito-penang-tg-bunga-can-move-in-aug-26-115303758.htm",
+    "title": "Granito @ Permai, Tanjung Bungah",
+    "first_seen": "2026-07-20",
+    "price_log": [
+      {
+        "date": "2026-07-20",
+        "price": 2100.0
+      }
+    ]
+  },
+  "115303153": {
+    "ref": "PPM-1134",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115303153.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-07-20",
+    "price_log": [
+      {
+        "date": "2026-07-20",
+        "price": 2600.0
+      }
+    ]
+  },
+  "115303014": {
+    "ref": "PPM-1135",
+    "mudah_url": "https://www.mudah.my/puncak-erskine-apartment-tanjung-tokong-penang-115303014.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-07-20",
+    "price_log": [
+      {
+        "date": "2026-07-20",
+        "price": 680.0
+      }
+    ]
+  },
+  "115302465": {
+    "ref": "PPM-1136",
+    "mudah_url": "https://www.mudah.my/direct-own-tri-pinnacle-tanjong-tokong-partially-furnished-115302465.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-07-20",
+    "price_log": [
+      {
+        "date": "2026-07-20",
+        "price": 1250.0
       }
     ]
   }
