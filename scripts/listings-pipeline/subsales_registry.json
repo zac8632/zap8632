@@ -1536,5 +1536,41 @@
         "price": 1250.0
       }
     ]
+  },
+  "115312281": {
+    "ref": "PPM-1137",
+    "mudah_url": "https://www.mudah.my/taman-bukit-erskine-near-adventist-straits-quay-gurney-pulau-andaman-115312281.htm",
+    "title": "Taman Bukit Erskine, Tanjong Tokong",
+    "first_seen": "2026-07-21",
+    "price_log": [
+      {
+        "date": "2026-07-21",
+        "price": 1150.0
+      }
+    ]
+  },
+  "115308707": {
+    "ref": "PPM-1138",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-at-tanjung-tokong-owner-115308707.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-07-21",
+    "price_log": [
+      {
+        "date": "2026-07-21",
+        "price": 1100.0
+      }
+    ]
+  },
+  "115307218": {
+    "ref": "PPM-1139",
+    "mudah_url": "https://www.mudah.my/the-peak-residences-tg-tokong-115307218.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-07-21",
+    "price_log": [
+      {
+        "date": "2026-07-21",
+        "price": 1800.0
+      }
+    ]
   }
 }
