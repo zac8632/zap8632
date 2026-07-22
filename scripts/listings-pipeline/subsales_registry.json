@@ -8,6 +8,10 @@
       {
         "date": "2026-07-08",
         "price": 15903500.0
+      },
+      {
+        "date": "2026-07-22",
+        "price": 1590350.0
       }
     ]
   },
@@ -1570,6 +1574,18 @@
       {
         "date": "2026-07-21",
         "price": 1800.0
+      }
+    ]
+  },
+  "115320220": {
+    "ref": "PPM-1140",
+    "mudah_url": "https://www.mudah.my/mira-residence-115320220.htm",
+    "title": "Mira Residence, Tanjung Bungah",
+    "first_seen": "2026-07-22",
+    "price_log": [
+      {
+        "date": "2026-07-22",
+        "price": 3500.0
       }
     ]
   }
