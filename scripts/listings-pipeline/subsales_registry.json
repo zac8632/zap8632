@@ -1588,5 +1588,29 @@
         "price": 3500.0
       }
     ]
+  },
+  "115341781": {
+    "ref": "PPM-1141",
+    "mudah_url": "https://www.mudah.my/shamrock-beach-house-tanjung-bungah-tokong-straits-quay-penang-gurney-115341781.htm",
+    "title": "Shamrock Beach House Tanjung Bungah Tokong Straits Quay Penang Gurney, Tanjung Bungah",
+    "first_seen": "2026-07-24",
+    "price_log": [
+      {
+        "date": "2026-07-24",
+        "price": 3700.0
+      }
+    ]
+  },
+  "115341126": {
+    "ref": "PPM-1142",
+    "mudah_url": "https://www.mudah.my/block-g-tanjung-bungah-partially-furnished-appartment-115341126.htm",
+    "title": "Taman Seri Setia, Tanjung Bungah",
+    "first_seen": "2026-07-24",
+    "price_log": [
+      {
+        "date": "2026-07-24",
+        "price": 1100.0
+      }
+    ]
   }
 }
