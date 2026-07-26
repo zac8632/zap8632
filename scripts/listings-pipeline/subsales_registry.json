@@ -1624,5 +1624,29 @@
         "price": 800.0
       }
     ]
+  },
+  "115354054": {
+    "ref": "PPM-1144",
+    "mudah_url": "https://www.mudah.my/middle-room-for-rent-granito-near-tar-umt-fully-furnished-115354054.htm",
+    "title": "Granito @ Permai, Tanjung Bungah",
+    "first_seen": "2026-07-26",
+    "price_log": [
+      {
+        "date": "2026-07-26",
+        "price": 600.0
+      }
+    ]
+  },
+  "115354027": {
+    "ref": "PPM-1145",
+    "mudah_url": "https://www.mudah.my/middle-room-for-rent-melody-homes-penang-fully-furnished-mo-115354027.htm",
+    "title": "Granito @ Permai, Tanjung Bungah",
+    "first_seen": "2026-07-26",
+    "price_log": [
+      {
+        "date": "2026-07-26",
+        "price": 650.0
+      }
+    ]
   }
 }
