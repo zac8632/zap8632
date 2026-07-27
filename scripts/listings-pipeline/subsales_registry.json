@@ -1648,5 +1648,77 @@
         "price": 650.0
       }
     ]
+  },
+  "115367281": {
+    "ref": "PPM-1146",
+    "mudah_url": "https://www.mudah.my/city-residence-tg-tokong-1850sqft-bespoke-designer-home-115367281.htm",
+    "title": "City Residence, Tanjong Tokong",
+    "first_seen": "2026-07-27",
+    "price_log": [
+      {
+        "date": "2026-07-27",
+        "price": 1780000.0
+      }
+    ]
+  },
+  "115367175": {
+    "ref": "PPM-1147",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115367175.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-07-27",
+    "price_log": [
+      {
+        "date": "2026-07-27",
+        "price": 2600.0
+      }
+    ]
+  },
+  "115366712": {
+    "ref": "PPM-1148",
+    "mudah_url": "https://www.mudah.my/the-peak-resident-115366712.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-07-27",
+    "price_log": [
+      {
+        "date": "2026-07-27",
+        "price": 2600.0
+      }
+    ]
+  },
+  "115363634": {
+    "ref": "PPM-1149",
+    "mudah_url": "https://www.mudah.my/tanjung-park-for-rent-115363634.htm",
+    "title": "tanjung park for rent, Tanjung Bungah",
+    "first_seen": "2026-07-27",
+    "price_log": [
+      {
+        "date": "2026-07-27",
+        "price": 1500.0
+      }
+    ]
+  },
+  "115361798": {
+    "ref": "PPM-1150",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-for-rent-115361798.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-07-27",
+    "price_log": [
+      {
+        "date": "2026-07-27",
+        "price": 1950.0
+      }
+    ]
+  },
+  "115361192": {
+    "ref": "PPM-1151",
+    "mudah_url": "https://www.mudah.my/residential-unit-tanjung-park-at-tanjung-tokong-115361192.htm",
+    "title": "Tanjung Park Condominium, Tanjong Tokong",
+    "first_seen": "2026-07-27",
+    "price_log": [
+      {
+        "date": "2026-07-27",
+        "price": 1800.0
+      }
+    ]
   }
 }
