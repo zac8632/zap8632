@@ -1720,5 +1720,29 @@
         "price": 1800.0
       }
     ]
+  },
+  "115374486": {
+    "ref": "PPM-1152",
+    "mudah_url": "https://www.mudah.my/high-floor-3-bedrooms-4-airconds-available-now-115374486.htm",
+    "title": "Taman Kristal, Tanjong Tokong",
+    "first_seen": "2026-07-28",
+    "price_log": [
+      {
+        "date": "2026-07-28",
+        "price": 1500.0
+      }
+    ]
+  },
+  "115374119": {
+    "ref": "PPM-1153",
+    "mudah_url": "https://www.mudah.my/taman-batu-bukit-tanjung-tokong-115374119.htm",
+    "title": "Taman Batu Bukit, Tanjong Tokong",
+    "first_seen": "2026-07-28",
+    "price_log": [
+      {
+        "date": "2026-07-28",
+        "price": 800.0
+      }
+    ]
   }
 }
