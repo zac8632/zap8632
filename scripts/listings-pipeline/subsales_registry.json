@@ -1744,5 +1744,29 @@
         "price": 800.0
       }
     ]
+  },
+  "115383045": {
+    "ref": "PPM-1154",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-at-tanjung-tokong-owner-115383045.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-07-29",
+    "price_log": [
+      {
+        "date": "2026-07-29",
+        "price": 1100.0
+      }
+    ]
+  },
+  "115378512": {
+    "ref": "PPM-1155",
+    "mudah_url": "https://www.mudah.my/quayside-seafront-resort-condominiums-unit-for-rent-115378512.htm",
+    "title": "Quayside, Tanjong Tokong",
+    "first_seen": "2026-07-29",
+    "price_log": [
+      {
+        "date": "2026-07-29",
+        "price": 6000.0
+      }
+    ]
   }
 }
