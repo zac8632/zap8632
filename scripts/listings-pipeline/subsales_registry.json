@@ -1768,5 +1768,17 @@
         "price": 6000.0
       }
     ]
+  },
+  "115393558": {
+    "ref": "PPM-1156",
+    "mudah_url": "https://www.mudah.my/palm-court-apartment-for-rent-area-tanjung-tokong-penang-115393558.htm",
+    "title": "Palm Court (Pangsapuri Nipah), Tanjong Tokong",
+    "first_seen": "2026-07-30",
+    "price_log": [
+      {
+        "date": "2026-07-30",
+        "price": 1450.0
+      }
+    ]
   }
 }
