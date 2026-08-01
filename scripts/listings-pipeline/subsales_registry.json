@@ -156,6 +156,10 @@
       {
         "date": "2026-07-08",
         "price": 1900000.0
+      },
+      {
+        "date": "2026-08-01",
+        "price": 1600000.0
       }
     ]
   },
@@ -1790,6 +1794,42 @@
       {
         "date": "2026-07-31",
         "price": 900.0
+      }
+    ]
+  },
+  "115408205": {
+    "ref": "PPM-1158",
+    "mudah_url": "https://www.mudah.my/freehold-115408205.htm",
+    "title": "One Tanjong, Tanjung Bungah",
+    "first_seen": "2026-08-01",
+    "price_log": [
+      {
+        "date": "2026-08-01",
+        "price": 3800000.0
+      }
+    ]
+  },
+  "115406741": {
+    "ref": "PPM-1159",
+    "mudah_url": "https://www.mudah.my/alila-horizon-tg-bungah-for-rent-115406741.htm",
+    "title": "Alila Horizon, Tanjung Bungah",
+    "first_seen": "2026-08-01",
+    "price_log": [
+      {
+        "date": "2026-08-01",
+        "price": 3200.0
+      }
+    ]
+  },
+  "115404854": {
+    "ref": "PPM-1160",
+    "mudah_url": "https://www.mudah.my/marina-bay-unit-for-rent-115404854.htm",
+    "title": "Marina Bay Condominium, Tanjong Tokong",
+    "first_seen": "2026-08-01",
+    "price_log": [
+      {
+        "date": "2026-08-01",
+        "price": 2500.0
       }
     ]
   }
