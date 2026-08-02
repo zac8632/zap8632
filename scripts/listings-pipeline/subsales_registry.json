@@ -1832,5 +1832,17 @@
         "price": 2500.0
       }
     ]
+  },
+  "115413433": {
+    "ref": "PPM-1161",
+    "mudah_url": "https://www.mudah.my/coastal-tower-for-rent-115413433.htm",
+    "title": "Coastal Tower, Tanjung Bungah",
+    "first_seen": "2026-08-02",
+    "price_log": [
+      {
+        "date": "2026-08-02",
+        "price": 1700.0
+      }
+    ]
   }
 }
