@@ -1844,5 +1844,53 @@
         "price": 1700.0
       }
     ]
+  },
+  "115425698": {
+    "ref": "PPM-1162",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115425698.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-08-03",
+    "price_log": [
+      {
+        "date": "2026-08-03",
+        "price": 2600.0
+      }
+    ]
+  },
+  "115425689": {
+    "ref": "PPM-1163",
+    "mudah_url": "https://www.mudah.my/i-santorini-for-rent-high-floor-115425689.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-08-03",
+    "price_log": [
+      {
+        "date": "2026-08-03",
+        "price": 2500.0
+      }
+    ]
+  },
+  "115420240": {
+    "ref": "PPM-1164",
+    "mudah_url": "https://www.mudah.my/leisure-bay-condo-115420240.htm",
+    "title": "Leisure Bay, Tanjong Tokong",
+    "first_seen": "2026-08-03",
+    "price_log": [
+      {
+        "date": "2026-08-03",
+        "price": 1200.0
+      }
+    ]
+  },
+  "115420210": {
+    "ref": "PPM-1165",
+    "mudah_url": "https://www.mudah.my/tanjung-tokong-apartment-tri-pinnacle-direct-owner-115420210.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-08-03",
+    "price_log": [
+      {
+        "date": "2026-08-03",
+        "price": 1100.0
+      }
+    ]
   }
 }
