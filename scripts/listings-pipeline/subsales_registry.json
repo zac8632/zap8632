@@ -1896,5 +1896,17 @@
         "price": 1100.0
       }
     ]
+  },
+  "115446422": {
+    "ref": "PPM-1166",
+    "mudah_url": "https://www.mudah.my/untuk-disewa-pangsapuri-fasa-4a-tg-tokong-penang-115446422.htm",
+    "title": "Pangsapuri Fasa 4A, Tanjong Tokong",
+    "first_seen": "2026-08-06",
+    "price_log": [
+      {
+        "date": "2026-08-06",
+        "price": 800.0
+      }
+    ]
   }
 }
