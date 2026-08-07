@@ -148,6 +148,10 @@
       {
         "date": "2026-07-08",
         "price": 1480000.0
+      },
+      {
+        "date": "2026-08-07",
+        "price": 1460000.0
       }
     ]
   },
@@ -1906,6 +1910,18 @@
       {
         "date": "2026-08-06",
         "price": 800.0
+      }
+    ]
+  },
+  "115459050": {
+    "ref": "PPM-1167",
+    "mudah_url": "https://www.mudah.my/permai-jaya-tanjong-bungah-near-tar-college-115459050.htm",
+    "title": "Permai Jaya Apartment, Tanjung Bungah",
+    "first_seen": "2026-08-07",
+    "price_log": [
+      {
+        "date": "2026-08-07",
+        "price": 1000.0
       }
     ]
   }
