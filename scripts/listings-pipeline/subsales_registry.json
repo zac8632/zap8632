@@ -366,6 +366,10 @@
       {
         "date": "2026-07-08",
         "price": 1300.0
+      },
+      {
+        "date": "2026-08-08",
+        "price": 1100.0
       }
     ]
   },
@@ -1921,6 +1925,30 @@
     "price_log": [
       {
         "date": "2026-08-07",
+        "price": 1000.0
+      }
+    ]
+  },
+  "115468009": {
+    "ref": "PPM-1168",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-fully-furnished-the-crown-penang-service-residence-for-rent-115468009.htm",
+    "title": "The Crown Penang, Tanjong Tokong",
+    "first_seen": "2026-08-08",
+    "price_log": [
+      {
+        "date": "2026-08-08",
+        "price": 800.0
+      }
+    ]
+  },
+  "115465163": {
+    "ref": "PPM-1169",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-apartment-for-rent-115465163.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-08-08",
+    "price_log": [
+      {
+        "date": "2026-08-08",
         "price": 1000.0
       }
     ]
