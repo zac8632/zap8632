@@ -1952,5 +1952,29 @@
         "price": 1000.0
       }
     ]
+  },
+  "115476797": {
+    "ref": "PPM-1170",
+    "mudah_url": "https://www.mudah.my/seaview-and-fully-furnished-unit-for-rent-115476797.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-08-09",
+    "price_log": [
+      {
+        "date": "2026-08-09",
+        "price": 900.0
+      }
+    ]
+  },
+  "115473566": {
+    "ref": "PPM-1171",
+    "mudah_url": "https://www.mudah.my/the-peak-resident-115473566.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-08-09",
+    "price_log": [
+      {
+        "date": "2026-08-09",
+        "price": 2600.0
+      }
+    ]
   }
 }
