@@ -1976,5 +1976,53 @@
         "price": 2600.0
       }
     ]
+  },
+  "115057080": {
+    "ref": "PPM-1172",
+    "mudah_url": "https://www.mudah.my/city-of-dreams-condominium-for-sale-115057080.htm",
+    "title": "City Of Dreams, Tanjong Tokong",
+    "first_seen": "2026-08-10",
+    "price_log": [
+      {
+        "date": "2026-08-10",
+        "price": 1380000.0
+      }
+    ]
+  },
+  "115484118": {
+    "ref": "PPM-1173",
+    "mudah_url": "https://www.mudah.my/double-storey-link-house-115484118.htm",
+    "title": "Double storey link house, Tanjong Tokong",
+    "first_seen": "2026-08-10",
+    "price_log": [
+      {
+        "date": "2026-08-10",
+        "price": 1900.0
+      }
+    ]
+  },
+  "115482730": {
+    "ref": "PPM-1174",
+    "mudah_url": "https://www.mudah.my/ad-title-house-for-rent-puncak-erskine-tanjung-tokong-ready-move-in-115482730.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-08-10",
+    "price_log": [
+      {
+        "date": "2026-08-10",
+        "price": 900.0
+      }
+    ]
+  },
+  "115481781": {
+    "ref": "PPM-1175",
+    "mudah_url": "https://www.mudah.my/house-to-rent-115481781.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-08-10",
+    "price_log": [
+      {
+        "date": "2026-08-10",
+        "price": 950.0
+      }
+    ]
   }
 }
