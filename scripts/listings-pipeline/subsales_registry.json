@@ -2024,5 +2024,53 @@
         "price": 950.0
       }
     ]
+  },
+  "115493501": {
+    "ref": "PPM-1176",
+    "mudah_url": "https://www.mudah.my/penang-tanjung-bungah-not-furnished-1-storey-terraced-house-for-rent-115493501.htm",
+    "title": "Penang Tanjung Bungah Not Furnished 1-Storey Terraced House For Rent, Tanjung Bungah",
+    "first_seen": "2026-08-11",
+    "price_log": [
+      {
+        "date": "2026-08-11",
+        "price": 4800.0
+      }
+    ]
+  },
+  "115489417": {
+    "ref": "PPM-1177",
+    "mudah_url": "https://www.mudah.my/condominium-for-rent-115489417.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-08-11",
+    "price_log": [
+      {
+        "date": "2026-08-11",
+        "price": 950.0
+      }
+    ]
+  },
+  "115489191": {
+    "ref": "PPM-1178",
+    "mudah_url": "https://www.mudah.my/skyridge-garden-penthouse-for-rent-115489191.htm",
+    "title": "Skyridge Garden @ Tanjung Tokong, Tanjong Tokong",
+    "first_seen": "2026-08-11",
+    "price_log": [
+      {
+        "date": "2026-08-11",
+        "price": 4500.0
+      }
+    ]
+  },
+  "115488611": {
+    "ref": "PPM-1179",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115488611.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-08-11",
+    "price_log": [
+      {
+        "date": "2026-08-11",
+        "price": 2600.0
+      }
+    ]
   }
 }
