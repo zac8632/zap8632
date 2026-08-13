@@ -2072,5 +2072,29 @@
         "price": 2600.0
       }
     ]
+  },
+  "115510794": {
+    "ref": "PPM-1180",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-fully-furnished-puncak-erskine-apartment-for-rent-115510794.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-08-13",
+    "price_log": [
+      {
+        "date": "2026-08-13",
+        "price": 800.0
+      }
+    ]
+  },
+  "115509444": {
+    "ref": "PPM-1181",
+    "mudah_url": "https://www.mudah.my/penang-tanjung-bungah-not-furnished-semi-detached-house-for-rent-115509444.htm",
+    "title": "Penang Tanjung Bungah Not Furnished Semi-Detached House For Rent, Tanjung Bungah",
+    "first_seen": "2026-08-13",
+    "price_log": [
+      {
+        "date": "2026-08-13",
+        "price": 4900.0
+      }
+    ]
   }
 }
