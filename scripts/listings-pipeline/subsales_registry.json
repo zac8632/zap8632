@@ -2096,5 +2096,17 @@
         "price": 4900.0
       }
     ]
+  },
+  "115522537": {
+    "ref": "PPM-1182",
+    "mudah_url": "https://www.mudah.my/unit-for-rent-115522537.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-08-14",
+    "price_log": [
+      {
+        "date": "2026-08-14",
+        "price": 900.0
+      }
+    ]
   }
 }
