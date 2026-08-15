@@ -2108,5 +2108,41 @@
         "price": 900.0
       }
     ]
+  },
+  "115531544": {
+    "ref": "PPM-1183",
+    "mudah_url": "https://www.mudah.my/ariza-denai-pinang-corner-2-1-2-terrace-direct-owner-renovated-115531544.htm",
+    "title": "Ariza Denai Pinang Corner 2 1/2 Terrace Direct Owner Renovated, Tanjong Tokong",
+    "first_seen": "2026-08-15",
+    "price_log": [
+      {
+        "date": "2026-08-15",
+        "price": 3500000.0
+      }
+    ]
+  },
+  "115528889": {
+    "ref": "PPM-1184",
+    "mudah_url": "https://www.mudah.my/resort-residence-strata-title-freehold-115528889.htm",
+    "title": "Diamond Villa, Tanjung Bungah",
+    "first_seen": "2026-08-15",
+    "price_log": [
+      {
+        "date": "2026-08-15",
+        "price": 1355000.0
+      }
+    ]
+  },
+  "115532932": {
+    "ref": "PPM-1185",
+    "mudah_url": "https://www.mudah.my/shamrock-beach-house-tanjung-bungah-tokong-straits-quay-penang-gurney-115532932.htm",
+    "title": "Shamrock Beach House Tanjung Bungah Tokong Straits Quay Penang Gurney, Tanjung Bungah",
+    "first_seen": "2026-08-15",
+    "price_log": [
+      {
+        "date": "2026-08-15",
+        "price": 3700.0
+      }
+    ]
   }
 }
