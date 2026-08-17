@@ -2144,5 +2144,17 @@
         "price": 3700.0
       }
     ]
+  },
+  "115545995": {
+    "ref": "PPM-1186",
+    "mudah_url": "https://www.mudah.my/taman-batu-bukit-tanjung-tokong-115545995.htm",
+    "title": "Taman Batu Bukit, Tanjong Tokong",
+    "first_seen": "2026-08-17",
+    "price_log": [
+      {
+        "date": "2026-08-17",
+        "price": 800.0
+      }
+    ]
   }
 }
