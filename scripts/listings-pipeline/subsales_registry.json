@@ -2156,5 +2156,53 @@
         "price": 800.0
       }
     ]
+  },
+  "115551174": {
+    "ref": "PPM-1187",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-freehold-city-of-dreams-service-residence-for-sale-115551174.htm",
+    "title": "City Of Dreams, Tanjong Tokong",
+    "first_seen": "2026-08-18",
+    "price_log": [
+      {
+        "date": "2026-08-18",
+        "price": 1600000.0
+      }
+    ]
+  },
+  "115552474": {
+    "ref": "PPM-1188",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-partially-furnished-tri-pinnacle-apartment-for-rent-115552474.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-08-18",
+    "price_log": [
+      {
+        "date": "2026-08-18",
+        "price": 1200.0
+      }
+    ]
+  },
+  "115551189": {
+    "ref": "PPM-1189",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-fully-furnished-city-of-dreams-service-residence-for-rent-115551189.htm",
+    "title": "City Of Dreams, Tanjong Tokong",
+    "first_seen": "2026-08-18",
+    "price_log": [
+      {
+        "date": "2026-08-18",
+        "price": 4000.0
+      }
+    ]
+  },
+  "115550625": {
+    "ref": "PPM-1190",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115550625.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-08-18",
+    "price_log": [
+      {
+        "date": "2026-08-18",
+        "price": 2600.0
+      }
+    ]
   }
 }
