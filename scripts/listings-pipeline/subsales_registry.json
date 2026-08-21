@@ -2228,5 +2228,53 @@
         "price": 2200.0
       }
     ]
+  },
+  "115583367": {
+    "ref": "PPM-1193",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-leasehold-marinox-sky-villas-condominium-for-sale-115583367.htm",
+    "title": "Marinox Sky Villas, Tanjong Tokong",
+    "first_seen": "2026-08-21",
+    "price_log": [
+      {
+        "date": "2026-08-21",
+        "price": 1300000.0
+      }
+    ]
+  },
+  "115585942": {
+    "ref": "PPM-1194",
+    "mudah_url": "https://www.mudah.my/penang-tanjung-bungah-partially-furnished-azuria-condominium-for-rent-115585942.htm",
+    "title": "Azuria, Tanjung Bungah",
+    "first_seen": "2026-08-21",
+    "price_log": [
+      {
+        "date": "2026-08-21",
+        "price": 1000.0
+      }
+    ]
+  },
+  "115582806": {
+    "ref": "PPM-1195",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-fully-furnished-quayside-condominium-for-rent-115582806.htm",
+    "title": "Quayside, Tanjong Tokong",
+    "first_seen": "2026-08-21",
+    "price_log": [
+      {
+        "date": "2026-08-21",
+        "price": 750.0
+      }
+    ]
+  },
+  "115580762": {
+    "ref": "PPM-1196",
+    "mudah_url": "https://www.mudah.my/the-peak-resident-115580762.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-08-21",
+    "price_log": [
+      {
+        "date": "2026-08-21",
+        "price": 2600.0
+      }
+    ]
   }
 }
