@@ -2276,5 +2276,29 @@
         "price": 2600.0
       }
     ]
+  },
+  "115593497": {
+    "ref": "PPM-1197",
+    "mudah_url": "https://www.mudah.my/semi-detached-house-bintang-road-near-gajah-road-115593497.htm",
+    "title": "Semi detached house Bintang Road near Gajah road, Tanjung Bungah",
+    "first_seen": "2026-08-22",
+    "price_log": [
+      {
+        "date": "2026-08-22",
+        "price": 2588888.0
+      }
+    ]
+  },
+  "115588926": {
+    "ref": "PPM-1198",
+    "mudah_url": "https://www.mudah.my/tamarind-condo-115588926.htm",
+    "title": "The Tamarind @ Seri Tanjung Pinang, Tanjong Tokong",
+    "first_seen": "2026-08-22",
+    "price_log": [
+      {
+        "date": "2026-08-22",
+        "price": 2600.0
+      }
+    ]
   }
 }
