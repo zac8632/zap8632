@@ -2286,6 +2286,10 @@
       {
         "date": "2026-08-22",
         "price": 2588888.0
+      },
+      {
+        "date": "2026-08-23",
+        "price": 2588800.0
       }
     ]
   },
@@ -2298,6 +2302,30 @@
       {
         "date": "2026-08-22",
         "price": 2600.0
+      }
+    ]
+  },
+  "115598519": {
+    "ref": "PPM-1199",
+    "mudah_url": "https://www.mudah.my/tanjung-bungah-2-storey-semi-detached-house-115598519.htm",
+    "title": "Tanjung Bungah 2-Storey Semi-Detached House, Tanjung Bungah",
+    "first_seen": "2026-08-23",
+    "price_log": [
+      {
+        "date": "2026-08-23",
+        "price": 1800000.0
+      }
+    ]
+  },
+  "115602079": {
+    "ref": "PPM-1200",
+    "mudah_url": "https://www.mudah.my/condo-for-rent-tanjung-tokong-115602079.htm",
+    "title": "Tanjung Park Condominium, Tanjong Tokong",
+    "first_seen": "2026-08-23",
+    "price_log": [
+      {
+        "date": "2026-08-23",
+        "price": 2500.0
       }
     ]
   }
