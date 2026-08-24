@@ -2328,5 +2328,29 @@
         "price": 2500.0
       }
     ]
+  },
+  "115608489": {
+    "ref": "PPM-1201",
+    "mudah_url": "https://www.mudah.my/quayside-115608489.htm",
+    "title": "Quayside, Tanjong Tokong",
+    "first_seen": "2026-08-24",
+    "price_log": [
+      {
+        "date": "2026-08-24",
+        "price": 4800.0
+      }
+    ]
+  },
+  "115604499": {
+    "ref": "PPM-1202",
+    "mudah_url": "https://www.mudah.my/for-rent-115604499.htm",
+    "title": "Granito @ Permai, Tanjung Bungah",
+    "first_seen": "2026-08-24",
+    "price_log": [
+      {
+        "date": "2026-08-24",
+        "price": 2200.0
+      }
+    ]
   }
 }
