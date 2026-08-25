@@ -2352,5 +2352,41 @@
         "price": 2200.0
       }
     ]
+  },
+  "115612491": {
+    "ref": "PPM-1203",
+    "mudah_url": "https://www.mudah.my/direct-owner-windy-medium-floor-i-santorini-tanjong-tokong-nice-view-115612491.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-08-25",
+    "price_log": [
+      {
+        "date": "2026-08-25",
+        "price": 1850.0
+      }
+    ]
+  },
+  "115611443": {
+    "ref": "PPM-1204",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-partially-furnished-i-santorini-condominium-for-rent-115611443.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-08-25",
+    "price_log": [
+      {
+        "date": "2026-08-25",
+        "price": 1850.0
+      }
+    ]
+  },
+  "115610755": {
+    "ref": "PPM-1205",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115610755.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-08-25",
+    "price_log": [
+      {
+        "date": "2026-08-25",
+        "price": 2600.0
+      }
+    ]
   }
 }
