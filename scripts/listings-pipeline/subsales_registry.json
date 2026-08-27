@@ -1414,6 +1414,10 @@
       {
         "date": "2026-07-16",
         "price": 1300.0
+      },
+      {
+        "date": "2026-08-27",
+        "price": 1450.0
       }
     ]
   },
@@ -2402,6 +2406,10 @@
       {
         "date": "2026-08-26",
         "price": 650.0
+      },
+      {
+        "date": "2026-08-27",
+        "price": 600.0
       }
     ]
   },
@@ -2414,6 +2422,42 @@
       {
         "date": "2026-08-26",
         "price": 2350.0
+      }
+    ]
+  },
+  "115632137": {
+    "ref": "PPM-1208",
+    "mudah_url": "https://www.mudah.my/penang-tanjung-bungah-freehold-3-5-storey-terraced-house-for-sale-115632137.htm",
+    "title": "Penang Tanjung Bungah Freehold 3.5-Storey Terraced House For Sale, Tanjung Bungah",
+    "first_seen": "2026-08-27",
+    "price_log": [
+      {
+        "date": "2026-08-27",
+        "price": 1330000.0
+      }
+    ]
+  },
+  "115637768": {
+    "ref": "PPM-1209",
+    "mudah_url": "https://www.mudah.my/shamrock-beach-house-tanjung-bungah-tokong-straits-quay-penang-gurney-115637768.htm",
+    "title": "Shamrock Beach House Tanjung Bungah Tokong Straits Quay Penang Gurney, Tanjung Bungah",
+    "first_seen": "2026-08-27",
+    "price_log": [
+      {
+        "date": "2026-08-27",
+        "price": 3700.0
+      }
+    ]
+  },
+  "115633695": {
+    "ref": "PPM-1210",
+    "mudah_url": "https://www.mudah.my/tamarind-for-rent-115633695.htm",
+    "title": "The Tamarind @ Seri Tanjung Pinang, Tanjong Tokong",
+    "first_seen": "2026-08-27",
+    "price_log": [
+      {
+        "date": "2026-08-27",
+        "price": 4500.0
       }
     ]
   }
