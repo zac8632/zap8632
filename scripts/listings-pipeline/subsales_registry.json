@@ -2460,5 +2460,29 @@
         "price": 4500.0
       }
     ]
+  },
+  "115646617": {
+    "ref": "PPM-1211",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-freehold-city-of-dreams-service-residence-for-sale-115646617.htm",
+    "title": "City Of Dreams, Tanjong Tokong",
+    "first_seen": "2026-08-28",
+    "price_log": [
+      {
+        "date": "2026-08-28",
+        "price": 1550000.0
+      }
+    ]
+  },
+  "115646562": {
+    "ref": "PPM-1212",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-freehold-city-residence-condominium-for-sale-115646562.htm",
+    "title": "City Residence, Tanjong Tokong",
+    "first_seen": "2026-08-28",
+    "price_log": [
+      {
+        "date": "2026-08-28",
+        "price": 1450000.0
+      }
+    ]
   }
 }
