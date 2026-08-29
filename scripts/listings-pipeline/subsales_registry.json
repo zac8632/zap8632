@@ -2484,5 +2484,17 @@
         "price": 1450000.0
       }
     ]
+  },
+  "115654546": {
+    "ref": "PPM-1213",
+    "mudah_url": "https://www.mudah.my/convenient-115654546.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-08-29",
+    "price_log": [
+      {
+        "date": "2026-08-29",
+        "price": 2500.0
+      }
+    ]
   }
 }
