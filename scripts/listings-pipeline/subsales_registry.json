@@ -2496,5 +2496,41 @@
         "price": 2500.0
       }
     ]
+  },
+  "115662122": {
+    "ref": "PPM-1214",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115662122.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-08-31",
+    "price_log": [
+      {
+        "date": "2026-08-31",
+        "price": 2600.0
+      }
+    ]
+  },
+  "115661124": {
+    "ref": "PPM-1215",
+    "mudah_url": "https://www.mudah.my/i-santorini-condominium-tanjong-tokong-penang-115661124.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-08-31",
+    "price_log": [
+      {
+        "date": "2026-08-31",
+        "price": 1800.0
+      }
+    ]
+  },
+  "115492138": {
+    "ref": "PPM-1216",
+    "mudah_url": "https://www.mudah.my/taman-kristal-apartment-rooms-for-rent-115492138.htm",
+    "title": "Taman Kristal, Tanjong Tokong",
+    "first_seen": "2026-08-31",
+    "price_log": [
+      {
+        "date": "2026-08-31",
+        "price": 800.0
+      }
+    ]
   }
 }
