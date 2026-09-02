@@ -2544,5 +2544,17 @@
         "price": 800.0
       }
     ]
+  },
+  "115672579": {
+    "ref": "PPM-1218",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-fully-furnished-i-santorini-condominium-for-rent-115672579.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-09-02",
+    "price_log": [
+      {
+        "date": "2026-09-02",
+        "price": 600.0
+      }
+    ]
   }
 }
