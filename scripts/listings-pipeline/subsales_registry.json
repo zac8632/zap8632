@@ -2556,5 +2556,29 @@
         "price": 600.0
       }
     ]
+  },
+  "115692267": {
+    "ref": "PPM-1219",
+    "mudah_url": "https://www.mudah.my/bandar-terengganu-rumah-sewa-115692267.htm",
+    "title": "Pangsapuri Warisan Tanjung, Tanjong Tokong",
+    "first_seen": "2026-09-04",
+    "price_log": [
+      {
+        "date": "2026-09-04",
+        "price": 1500.0
+      }
+    ]
+  },
+  "115688552": {
+    "ref": "PPM-1220",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-fully-furnished-straits-quay-service-residence-for-rent-115688552.htm",
+    "title": "Straits Quay, Tanjong Tokong",
+    "first_seen": "2026-09-04",
+    "price_log": [
+      {
+        "date": "2026-09-04",
+        "price": 5300.0
+      }
+    ]
   }
 }
