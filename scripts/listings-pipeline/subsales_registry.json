@@ -2580,5 +2580,17 @@
         "price": 5300.0
       }
     ]
+  },
+  "115699920": {
+    "ref": "PPM-1221",
+    "mudah_url": "https://www.mudah.my/flat-uda-untuk-disewa-fully-furnish-115699920.htm",
+    "title": "Uda Flat, Tanjung Bungah",
+    "first_seen": "2026-09-05",
+    "price_log": [
+      {
+        "date": "2026-09-05",
+        "price": 1000.0
+      }
+    ]
   }
 }
