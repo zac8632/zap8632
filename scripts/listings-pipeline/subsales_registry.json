@@ -2592,5 +2592,29 @@
         "price": 1000.0
       }
     ]
+  },
+  "115718100": {
+    "ref": "PPM-1222",
+    "mudah_url": "https://www.mudah.my/unit-a-19-05-115718100.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-09-07",
+    "price_log": [
+      {
+        "date": "2026-09-07",
+        "price": 800.0
+      }
+    ]
+  },
+  "115714307": {
+    "ref": "PPM-1223",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115714307.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-09-07",
+    "price_log": [
+      {
+        "date": "2026-09-07",
+        "price": 2600.0
+      }
+    ]
   }
 }
