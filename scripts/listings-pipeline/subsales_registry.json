@@ -2616,5 +2616,53 @@
         "price": 2600.0
       }
     ]
+  },
+  "115724632": {
+    "ref": "PPM-1224",
+    "mudah_url": "https://www.mudah.my/penang-tanjong-tokong-partially-furnished-tri-pinnacle-condominium-for-rent-115724632.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-09-08",
+    "price_log": [
+      {
+        "date": "2026-09-08",
+        "price": 1300.0
+      }
+    ]
+  },
+  "115724144": {
+    "ref": "PPM-1225",
+    "mudah_url": "https://www.mudah.my/penang-tanjung-bungah-partially-furnished-permai-jaya-apartment-apartment-for-rent-115724144.htm",
+    "title": "Permai Jaya Apartment, Tanjung Bungah",
+    "first_seen": "2026-09-08",
+    "price_log": [
+      {
+        "date": "2026-09-08",
+        "price": 850.0
+      }
+    ]
+  },
+  "115720465": {
+    "ref": "PPM-1226",
+    "mudah_url": "https://www.mudah.my/good-condition-well-maintained-115720465.htm",
+    "title": "Skyridge Apartment, Tanjong Tokong",
+    "first_seen": "2026-09-08",
+    "price_log": [
+      {
+        "date": "2026-09-08",
+        "price": 1300.0
+      }
+    ]
+  },
+  "115720327": {
+    "ref": "PPM-1227",
+    "mudah_url": "https://www.mudah.my/nice-place-to-stay-115720327.htm",
+    "title": "Mont Residence @ Penang, Tanjong Tokong",
+    "first_seen": "2026-09-08",
+    "price_log": [
+      {
+        "date": "2026-09-08",
+        "price": 2500.0
+      }
+    ]
   }
 }
