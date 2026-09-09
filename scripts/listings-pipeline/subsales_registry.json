@@ -2664,5 +2664,17 @@
         "price": 2500.0
       }
     ]
+  },
+  "115729572": {
+    "ref": "PPM-1228",
+    "mudah_url": "https://www.mudah.my/city-of-dreams-condo-115729572.htm",
+    "title": "City Of Dreams, Tanjong Tokong",
+    "first_seen": "2026-09-09",
+    "price_log": [
+      {
+        "date": "2026-09-09",
+        "price": 1380000.0
+      }
+    ]
   }
 }
