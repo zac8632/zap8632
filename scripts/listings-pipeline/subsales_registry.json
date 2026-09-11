@@ -2688,5 +2688,29 @@
         "price": 2600.0
       }
     ]
+  },
+  "115752031": {
+    "ref": "PPM-1230",
+    "mudah_url": "https://www.mudah.my/penang-georgetown-fully-furnished-gurney-park-condominium-for-rent-115752031.htm",
+    "title": "Gurney Park, Georgetown",
+    "first_seen": "2026-09-11",
+    "price_log": [
+      {
+        "date": "2026-09-11",
+        "price": 600.0
+      }
+    ]
+  },
+  "115747656": {
+    "ref": "PPM-1231",
+    "mudah_url": "https://www.mudah.my/condo-with-beautiful-seaview-and-huge-balcony-is-up-for-rental-115747656.htm",
+    "title": "Coastal Tower, Tanjung Bungah",
+    "first_seen": "2026-09-11",
+    "price_log": [
+      {
+        "date": "2026-09-11",
+        "price": 1500.0
+      }
+    ]
   }
 }
