@@ -47,6 +47,23 @@ jobs:
           git show origin/data/penang-owners-scrape:scripts/listings-pipeline/penang_seen_listings.json \
             > penang_seen_listings.json 2>/dev/null || echo "{}" > penang_seen_listings.json
 
+      - name: Restore listing archive + hero images from data branch
+        # No working-directory override here (unlike the sibling steps) -
+        # deliberately runs from the repo root so this pathspec-based git
+        # archive call and the git-show call are both unambiguously
+        # repo-root-relative. Mixing a working-directory: subfolder with a
+        # full repo-root-relative pathspec is exactly the kind of path
+        # confusion that silently broke the seen-listings restore step
+        # above (see its comment) - not worth risking again for a whole
+        # directory of images.
+        run: |
+          git show origin/data/penang-owners-scrape:scripts/listings-pipeline/penang_archive.json \
+            > scripts/listings-pipeline/penang_archive.json 2>/dev/null \
+            || echo "{}" > scripts/listings-pipeline/penang_archive.json
+          mkdir -p scripts/listings-pipeline/archive_images
+          git archive origin/data/penang-owners-scrape -- scripts/listings-pipeline/archive_images 2>/dev/null \
+            | tar -x || true
+
       - name: Write Google service-account key from secret
         working-directory: scripts/listings-pipeline
         run: echo '${{ secrets.GSHEET_SERVICE_ACCOUNT_JSON }}' > gsheet_key.json
@@ -70,6 +87,16 @@ jobs:
             --gsheet-id "1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI" \
             --gsheet-key gsheet_key.json
 
+      - name: Update listing archive (incl. expired-listing tracking + hero images)
+        working-directory: scripts/listings-pipeline
+        run: |
+          python archive_listings.py \
+            --scrape-output penang_owners.xlsx \
+            --archive-file penang_archive.json \
+            --images-dir archive_images \
+            --gsheet-id "1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI" \
+            --gsheet-key gsheet_key.json
+
       - name: Remove service-account key before committing
         working-directory: scripts/listings-pipeline
         run: rm -f gsheet_key.json
@@ -85,7 +112,10 @@ jobs:
         run: |
           cp penang_owners.xlsx /tmp/penang_owners.xlsx
           cp penang_seen_listings.json /tmp/penang_seen_listings.json
-          rm -f penang_owners.xlsx penang_seen_listings.json
+          cp penang_archive.json /tmp/penang_archive.json
+          rm -rf /tmp/archive_images
+          cp -r archive_images /tmp/archive_images
+          rm -rf penang_owners.xlsx penang_seen_listings.json penang_archive.json archive_images
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           if git fetch origin data/penang-owners-scrape; then
@@ -96,7 +126,10 @@ jobs:
           fi
           cp /tmp/penang_owners.xlsx penang_owners.xlsx
           cp /tmp/penang_seen_listings.json penang_seen_listings.json
-          git add -f penang_owners.xlsx penang_seen_listings.json
+          cp /tmp/penang_archive.json penang_archive.json
+          rm -rf archive_images
+          cp -r /tmp/archive_images archive_images
+          git add -f penang_owners.xlsx penang_seen_listings.json penang_archive.json archive_images
           if git diff --cached --quiet; then
             echo "Scrape output unchanged since last run - nothing to commit."
           else

@@ -860,7 +860,8 @@ def price_to_number(raw):
     return float(digits) if digits else None
 
 
-def sync_to_gsheet(df, gsheet_id, gsheet_key, tab_name, preserve_columns=None, key_column="Listing URL"):
+def sync_to_gsheet(df, gsheet_id, gsheet_key, tab_name, preserve_columns=None, key_column="Listing URL",
+                    value_input_option="RAW"):
     """Push a DataFrame straight into a tab of a live Google Sheet (create
     the tab if it doesn't exist yet, otherwise wipe and replace its
     contents with this run's data). Requires a service-account JSON key
@@ -874,11 +875,15 @@ def sync_to_gsheet(df, gsheet_id, gsheet_key, tab_name, preserve_columns=None, k
     columns (keyed by key_column) before clearing, and carries them forward
     into the fresh data.
 
-    Uses value_input_option="RAW" rather than "USER_ENTERED" - the latter
-    auto-parses numeric-looking strings into actual numbers, which would
-    silently strip the leading zero off every phone number (the same
-    corruption that hit the Excel output early on in this project, from
-    Excel doing the same kind of auto-conversion)."""
+    Defaults to value_input_option="RAW" rather than "USER_ENTERED" - the
+    latter auto-parses numeric-looking strings into actual numbers, which
+    would silently strip the leading zero off every phone number (the
+    same corruption that hit the Excel output early on in this project,
+    from Excel doing the same kind of auto-conversion). Pass
+    "USER_ENTERED" only when the df needs live formulas evaluated (e.g.
+    an =IMAGE() cell) - callers doing that must pre-guard any phone-like
+    text column themselves (leading "'" forces text) since this function
+    no longer protects them in that mode."""
     try:
         import gspread
     except ImportError:
@@ -920,7 +925,7 @@ def sync_to_gsheet(df, gsheet_id, gsheet_key, tab_name, preserve_columns=None, k
     safe_df = df.where(pd.notna(df), "")
     values = [list(safe_df.columns)] + safe_df.values.tolist()
     try:
-        ws.update(values, value_input_option="RAW")
+        ws.update(values, value_input_option=value_input_option)
         ws.freeze(rows=1)
         ws.format("1:1", {
             "textFormat": {"bold": True, "foregroundColor": {"red": 1, "green": 1, "blue": 1}},
