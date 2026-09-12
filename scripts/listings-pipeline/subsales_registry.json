@@ -2712,5 +2712,53 @@
         "price": 1500.0
       }
     ]
+  },
+  "115760118": {
+    "ref": "PPM-1232",
+    "mudah_url": "https://www.mudah.my/penang-tanjung-bungah-freehold-3-5-storey-terraced-house-for-sale-115760118.htm",
+    "title": "Penang Tanjung Bungah Freehold 3.5-Storey Terraced House For Sale, Tanjung Bungah",
+    "first_seen": "2026-09-12",
+    "price_log": [
+      {
+        "date": "2026-09-12",
+        "price": 1320000.0
+      }
+    ]
+  },
+  "115762756": {
+    "ref": "PPM-1233",
+    "mudah_url": "https://www.mudah.my/shamrock-beach-house-tanjung-bungah-tokong-straits-quay-penang-gurney-115762756.htm",
+    "title": "Shamrock Beach House Tanjung Bungah Tokong Straits Quay Penang Gurney, Tanjung Bungah",
+    "first_seen": "2026-09-12",
+    "price_log": [
+      {
+        "date": "2026-09-12",
+        "price": 3700.0
+      }
+    ]
+  },
+  "115761890": {
+    "ref": "PPM-1234",
+    "mudah_url": "https://www.mudah.my/city-of-dream-for-rent-115761890.htm",
+    "title": "City Of Dreams, Tanjong Tokong",
+    "first_seen": "2026-09-12",
+    "price_log": [
+      {
+        "date": "2026-09-12",
+        "price": 4000.0
+      }
+    ]
+  },
+  "115758196": {
+    "ref": "PPM-1235",
+    "mudah_url": "https://www.mudah.my/private-garden-3-storey-alila-homes-115758196.htm",
+    "title": "Private garden 3 storey- Alila Homes, Persiaran Gurney",
+    "first_seen": "2026-09-12",
+    "price_log": [
+      {
+        "date": "2026-09-12",
+        "price": 4200.0
+      }
+    ]
   }
 }
