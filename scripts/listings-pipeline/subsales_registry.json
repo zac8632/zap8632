@@ -2234,6 +2234,10 @@
       {
         "date": "2026-08-20",
         "price": 2200.0
+      },
+      {
+        "date": "2026-09-15",
+        "price": 2000.0
       }
     ]
   },
@@ -2774,6 +2778,18 @@
       {
         "date": "2026-09-14",
         "price": 2600.0
+      }
+    ]
+  },
+  "115782506": {
+    "ref": "PPM-1237",
+    "mudah_url": "https://www.mudah.my/permai-jaya-house-for-rent-partially-furnished-ready-to-move-in-115782506.htm",
+    "title": "Permai Jaya Apartment, Tanjung Bungah",
+    "first_seen": "2026-09-15",
+    "price_log": [
+      {
+        "date": "2026-09-15",
+        "price": 1400.0
       }
     ]
   }
