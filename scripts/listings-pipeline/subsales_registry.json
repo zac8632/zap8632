@@ -2816,5 +2816,29 @@
         "price": 1650000.0
       }
     ]
+  },
+  "115816314": {
+    "ref": "PPM-1240",
+    "mudah_url": "https://www.mudah.my/corner-terrace-house-on-sale-115816314.htm",
+    "title": "Corner Terrace House on Sale, Tanjung Bungah",
+    "first_seen": "2026-09-19",
+    "price_log": [
+      {
+        "date": "2026-09-19",
+        "price": 1850000.0
+      }
+    ]
+  },
+  "115819019": {
+    "ref": "PPM-1241",
+    "mudah_url": "https://www.mudah.my/exclusive-beachfront-home-in-george-town-suburb-for-lease-115819019.htm",
+    "title": "Exclusive Beachfront Home in George Town suburb for Lease, Tanjung Bungah",
+    "first_seen": "2026-09-19",
+    "price_log": [
+      {
+        "date": "2026-09-19",
+        "price": 4500.0
+      }
+    ]
   }
 }
