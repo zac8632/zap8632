@@ -12,6 +12,10 @@
       {
         "date": "2026-07-22",
         "price": 1590350.0
+      },
+      {
+        "date": "2026-09-20",
+        "price": 15000000.0
       }
     ]
   },
@@ -2838,6 +2842,30 @@
       {
         "date": "2026-09-19",
         "price": 4500.0
+      }
+    ]
+  },
+  "115827083": {
+    "ref": "PPM-1242",
+    "mudah_url": "https://www.mudah.my/leader-garden-condominium-duplex-unit-115827083.htm",
+    "title": "Leader Garden, Tanjung Bungah",
+    "first_seen": "2026-09-20",
+    "price_log": [
+      {
+        "date": "2026-09-20",
+        "price": 1300000.0
+      }
+    ]
+  },
+  "115826071": {
+    "ref": "PPM-1243",
+    "mudah_url": "https://www.mudah.my/fully-furnish-seaview-unit-for-rent-115826071.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-09-20",
+    "price_log": [
+      {
+        "date": "2026-09-20",
+        "price": 2600.0
       }
     ]
   }
