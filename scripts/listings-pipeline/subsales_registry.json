@@ -2872,5 +2872,29 @@
         "price": 2600.0
       }
     ]
+  },
+  "115842059": {
+    "ref": "PPM-1244",
+    "mudah_url": "https://www.mudah.my/gurney-park-high-floor-fully-furnished-115842059.htm",
+    "title": "Gurney Park, Georgetown",
+    "first_seen": "2026-09-22",
+    "price_log": [
+      {
+        "date": "2026-09-22",
+        "price": 2300.0
+      }
+    ]
+  },
+  "115839205": {
+    "ref": "PPM-1245",
+    "mudah_url": "https://www.mudah.my/the-peak-resident-115839205.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-09-22",
+    "price_log": [
+      {
+        "date": "2026-09-22",
+        "price": 2600.0
+      }
+    ]
   }
 }
