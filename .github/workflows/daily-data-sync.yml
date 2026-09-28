@@ -104,6 +104,18 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
 
+      - name: Print debug dump to the job log (artifact downloads aren't reachable from here)
+        if: always()
+        working-directory: scripts/listings-pipeline
+        run: |
+          for f in debug_*; do
+            [ -e "$f" ] || continue
+            echo "===== $f (first 4000 chars) ====="
+            head -c 4000 "$f"
+            echo
+            echo "===== end $f ====="
+          done
+
       - name: Update listing archive (incl. expired-listing tracking + hero images)
         working-directory: scripts/listings-pipeline
         run: |
