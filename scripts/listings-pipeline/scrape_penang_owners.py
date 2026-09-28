@@ -553,6 +553,87 @@ def enrich_with_details(session, rows, limit, debug_dump):
         polite_sleep(1.0, 2.0)
 
 
+_NEXT_F_PUSH_RE = re.compile(r'self\.__next_f\.push\(\[\d+,("(?:[^"\\]|\\.)*")\]\)')
+
+
+def _extract_json_object(text, key):
+    """Find "<key>":{...} in text and return the substring for the
+    matching {...} via brace counting (respects nested objects/strings/
+    escapes) - or None if <key> isn't present."""
+    needle = f'"{key}":'
+    idx = text.find(needle)
+    if idx == -1:
+        return None
+    start = text.find("{", idx)
+    if start == -1:
+        return None
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(text)):
+        c = text[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif c == "\\":
+                escape = True
+            elif c == '"':
+                in_string = False
+            continue
+        if c == '"':
+            in_string = True
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                return text[start:i + 1]
+    return None
+
+
+def extract_initial_store(html):
+    """Return the page's initialStore dict (ads/featuredAds + search
+    metadata), or None if it can't be found by either method below.
+
+    mudah.my used to server-render this directly into a single
+    <script id="__NEXT_DATA__"> JSON blob (classic Next.js Pages
+    Router) - tried first here for resilience in case any page
+    template still uses it. As of the rebuild that broke this scraper
+    for 5 days (Sep 24-28), category pages instead stream it as a
+    JSON-escaped string fragment inside React Server Component "flight"
+    calls - (self.__next_f=self.__next_f||[]).push([id, "..."]) - which
+    Next.js's App Router uses instead. Concatenating every push(...)
+    payload's decoded text in document order and then brace-matching
+    from the first "initialStore": recovers the exact same object the
+    old page used to serve directly (verified against a live page dump:
+    43/43 ads recovered, matching the raw "ads"-occurrence count).
+    """
+    m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL)
+    if m:
+        try:
+            nd = json.loads(m.group(1))
+            return nd["props"]["pageProps"]["initialStore"]
+        except Exception:
+            pass  # fall through to the flight-based extraction below
+
+    parts = []
+    for pm in _NEXT_F_PUSH_RE.finditer(html):
+        try:
+            parts.append(json.loads(pm.group(1)))
+        except json.JSONDecodeError:
+            continue
+    if not parts:
+        return None
+    flight_text = "".join(parts)
+    raw = _extract_json_object(flight_text, "initialStore")
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+
 def scrape_category(session, label, base_url, max_pages, owner_only, debug_dump, asset_type):
     results = []
     for pg in range(1, max_pages + 1):
@@ -571,25 +652,17 @@ def scrape_category(session, label, base_url, max_pages, owner_only, debug_dump,
             print(f"[{label}] page {pg}: HTTP {r.status_code}", file=sys.stderr)
             break
 
-        m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', r.text, re.DOTALL)
-        if not m:
-            print(f"[{label}] page {pg}: no __NEXT_DATA__ found", file=sys.stderr)
+        try:
+            store = extract_initial_store(r.text)
+            if store is None:
+                raise ValueError("initialStore not found (neither __NEXT_DATA__ nor flight-decoded)")
+            ads = store.get("ads", []) + store.get("featuredAds", [])
+        except Exception as e:
+            print(f"[{label}] page {pg}: could not extract listings ({e})", file=sys.stderr)
             if debug_dump:
                 with open(f"debug_{label}_p{pg}.html", "w") as f:
                     f.write(r.text)
                 print(f"  -> dumped raw HTML to debug_{label}_p{pg}.html", file=sys.stderr)
-            break
-
-        try:
-            nd = json.loads(m.group(1))
-            store = nd["props"]["pageProps"]["initialStore"]
-            ads = store.get("ads", []) + store.get("featuredAds", [])
-        except Exception as e:
-            print(f"[{label}] page {pg}: could not parse __NEXT_DATA__ ({e})", file=sys.stderr)
-            if debug_dump:
-                with open(f"debug_{label}_p{pg}.json", "w") as f:
-                    f.write(m.group(1))
-                print(f"  -> dumped raw JSON to debug_{label}_p{pg}.json", file=sys.stderr)
             break
 
         if not ads:
