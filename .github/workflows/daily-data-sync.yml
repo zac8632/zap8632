@@ -13,6 +13,10 @@ on:
         description: "Scrape all of Penang state (not just the island)"
         required: false
         default: "true"
+      debug_dump:
+        description: "Dump raw page output for each category (diagnostic - see scrape_penang_owners.py --debug-dump)"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -73,12 +77,16 @@ jobs:
         env:
           PAGES: ${{ github.event.inputs.pages || '200' }}
           STATEWIDE: ${{ github.event.inputs.statewide || 'true' }}
+          DEBUG_DUMP: ${{ github.event.inputs.debug_dump || 'false' }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           STATEWIDE_FLAG=""
           if [ "$STATEWIDE" = "true" ]; then STATEWIDE_FLAG="--statewide"; fi
+          DEBUG_FLAG=""
+          if [ "$DEBUG_DUMP" = "true" ]; then DEBUG_FLAG="--debug-dump"; fi
           python scrape_penang_owners.py \
             $STATEWIDE_FLAG \
+            $DEBUG_FLAG \
             --pages "$PAGES" \
             --fetch-details \
             --detail-limit 200 \
@@ -86,6 +94,15 @@ jobs:
             --seen-file penang_seen_listings.json \
             --gsheet-id "1MVjmW28PuJruSwbt-JUrY9f51dPMC-O6lDDLfOwOpRI" \
             --gsheet-key gsheet_key.json
+
+      - name: Upload debug dump (only present when debug_dump input was true)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-dump
+          path: scripts/listings-pipeline/debug_*
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Update listing archive (incl. expired-listing tracking + hero images)
         working-directory: scripts/listings-pipeline
