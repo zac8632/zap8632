@@ -114,19 +114,8 @@ jobs:
             wc -c "$f"
             echo "===== $f: does it mention __NEXT_DATA__, __next_f, initialStore, ads ====="
             grep -o "__NEXT_DATA__\|__next_f\|initialStore\|\"ads\"" "$f" | sort | uniq -c
-            echo "===== $f: first script tag whose id starts with __next or contains self.__next_f (first 6000 chars each, up to 5 matches) ====="
-            python3 -c "
-import re
-html = open('$f').read()
-for m in list(re.finditer(r'<script[^>]*>.*?</script>', html, re.DOTALL))[:0]:
-    pass
-# self.__next_f.push(...) calls carry the RSC flight data in the app router
-pushes = re.findall(r'self\.__next_f\.push\(\[.{0,6000}?\]\)', html, re.DOTALL)
-print(f'found {len(pushes)} self.__next_f.push(...) calls')
-for i, p in enumerate(pushes[:5]):
-    print(f'--- push #{i} (first 3000 chars) ---')
-    print(p[:3000])
-"
+            echo "===== $f: self.__next_f.push(...) calls (RSC flight data, app-router equivalent of __NEXT_DATA__) ====="
+            python3 dump_next_f_pushes.py "$f"
           fi
 
       - name: Update listing archive (incl. expired-listing tracking + hero images)
