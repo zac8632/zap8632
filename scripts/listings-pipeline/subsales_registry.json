@@ -20,6 +20,10 @@
       {
         "date": "2026-09-21",
         "price": 1500000.0
+      },
+      {
+        "date": "2026-09-29",
+        "price": 1200000.0
       }
     ]
   },
@@ -1438,6 +1442,10 @@
       {
         "date": "2026-07-16",
         "price": 1300.0
+      },
+      {
+        "date": "2026-09-29",
+        "price": 1200.0
       }
     ]
   },
@@ -2230,6 +2238,10 @@
       {
         "date": "2026-08-19",
         "price": 1900.0
+      },
+      {
+        "date": "2026-09-29",
+        "price": 1700.0
       }
     ]
   },
@@ -2893,6 +2905,42 @@
     "price_log": [
       {
         "date": "2026-09-22",
+        "price": 2600.0
+      }
+    ]
+  },
+  "115896472": {
+    "ref": "PPM-1246",
+    "mudah_url": "https://www.mudah.my/the-peak-resident-115896472.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-09-29",
+    "price_log": [
+      {
+        "date": "2026-09-29",
+        "price": 2600.0
+      }
+    ]
+  },
+  "115866125": {
+    "ref": "PPM-1247",
+    "mudah_url": "https://www.mudah.my/gurney-park-room-for-rent-115866125.htm",
+    "title": "Gurney Park, Georgetown",
+    "first_seen": "2026-09-29",
+    "price_log": [
+      {
+        "date": "2026-09-29",
+        "price": 700.0
+      }
+    ]
+  },
+  "115865933": {
+    "ref": "PPM-1248",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115865933.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-09-29",
+    "price_log": [
+      {
+        "date": "2026-09-29",
         "price": 2600.0
       }
     ]
