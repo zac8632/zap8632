@@ -2944,5 +2944,17 @@
         "price": 2600.0
       }
     ]
+  },
+  "115911371": {
+    "ref": "PPM-1249",
+    "mudah_url": "https://www.mudah.my/for-rent-tamarind-seri-tanjung-pinang-115911371.htm",
+    "title": "The Tamarind @ Seri Tanjung Pinang, Tanjong Tokong",
+    "first_seen": "2026-09-30",
+    "price_log": [
+      {
+        "date": "2026-09-30",
+        "price": 3000.0
+      }
+    ]
   }
 }
