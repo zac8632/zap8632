@@ -155,8 +155,20 @@ MUDAH_FIELD_CANDIDATES = {
     "price":        ["price", "priceLabel"],
     "location":     ["subareaName", "locationLabel", "areaName"],
     "state":        ["regionName", "stateName"],
-    "property_type":["subCategoryName", "propertyType", "categoryName", "subCategory"],
-    "tenure":       ["tenure", "attr_tenure"],
+    # propertyTypeName is the fine-grained, single-value type mudah now
+    # exposes directly (e.g. "2-storey Terraced House", "Office space",
+    # "Condominium") - confirmed via a live ad dump after the App Router
+    # rebuild broke the old candidates below. categoryName (the old
+    # top candidate) is the broad bucket instead (e.g. just "House"),
+    # and was the source of the "Apartment / Condominium" combined-label
+    # complaint - kept as a fallback only, same as the rest of this list.
+    "property_type":["propertyTypeName", "subCategoryName", "propertyType", "categoryName", "subCategory"],
+    # titleTypeName is the new direct field for this - confirmed via live
+    # ad dumps (categoryParams, which "tenure"/"attr_tenure" used to be
+    # read from via PARAM_ID_CANDIDATES below, no longer exists in any ad
+    # on the rebuilt site). Malaysian property jargon: a property's
+    # "title type" is its Freehold/Leasehold status.
+    "tenure":       ["titleTypeName", "tenure", "attr_tenure"],
     "furnishing":   ["furnishing", "attr_furnishing"],
     "bedroom":      ["roomsName", "bedroom", "attr_bedroom", "bedrooms"],
     "bathroom":     ["bathroomName", "bathroom", "attr_bathroom", "bathrooms"],
@@ -180,13 +192,21 @@ DETAIL_FILL_COLUMNS = {
     "Listed Date":   "listed_at",
 }
 
-# Tenure/Furnishing/Bedrooms/Bathrooms/etc mostly aren't plain top-level
-# attributes - a real debug dump showed them living inside a
+# Tenure/Furnishing/Bedrooms/Bathrooms/etc used to live inside a
 # "categoryParams" list (each item like {"id": "rooms", "value": "3",
 # "label": "Bedrooms"}) and/or a "propertyParams" list of {header,
-# params: [{id, value, ...}]} groups. Maps MUDAH_FIELD_CANDIDATES key ->
-# the param "id" values to look for in those lists, checked as a fallback
-# whenever the direct top-level field lookup above comes back empty.
+# params: [{id, value, ...}]} groups, on the pre-rebuild site. As of the
+# App Router rebuild (see extract_initial_store()), neither list exists
+# on any ad anymore - confirmed against 4 live ad dumps across every
+# category (House/Office/Land/Room), all missing both keys entirely.
+# This fallback is effectively dead code against the current site, kept
+# only in case mudah ever reintroduces a similar nested-params shape -
+# the fields that actually mattered (tenure, property_type) now have a
+# live top-level candidate added to MUDAH_FIELD_CANDIDATES instead.
+# Furnishing has no live replacement found - it isn't present anywhere
+# in a card's own JSON on the rebuilt site at all (not even recursively,
+# under any key name); description-text extraction is the only source
+# left for it (see extract_furnishing_from_text()'s use below).
 PARAM_ID_CANDIDATES = {
     "tenure":        ["title_type", "tenure"],
     "furnishing":    ["furnishing"],
@@ -225,6 +245,28 @@ def field_value(attrs, key, params=None):
     if params is None:
         params = extract_category_params(attrs)
     return _first(params, PARAM_ID_CANDIDATES.get(key, []))
+
+
+def size_fields(attrs):
+    """Return (size_sqft, land_size) from attrs["size"] - mudah only
+    gives one raw number plus a unit in "sizeSuffix" (confirmed via live
+    dumps: "sq.ft." for a built-up residential/commercial unit, "Acres"
+    for land), not separate built-up-vs-land fields. Previously this
+    script put the raw number straight into "Size (sqft)" regardless of
+    unit, so a land listing's acreage (e.g. "12,850") ended up mislabeled
+    as if it were 12,850 square feet - this routes it to the correct
+    column based on the real unit instead."""
+    size = attrs.get("size")
+    if not size:
+        return None, None
+    suffix = str(attrs.get("sizeSuffix") or "").strip().lower()
+    if "sq" in suffix:
+        return size, None
+    if "acre" in suffix:
+        return None, f"{size} {attrs.get('sizeSuffix')}"
+    # Unknown/missing unit - preserve old behaviour (assume sqft) rather
+    # than silently dropping the value.
+    return size, None
 
 
 def _first(d, keys):
@@ -535,9 +577,15 @@ def enrich_with_details(session, rows, limit, debug_dump):
             # the actual fields (body, tenure, etc) live one level down in
             # "attributes", not on the wrapper itself.
             attrs = node.get("attributes", node) if isinstance(node, dict) else node
+            detail_size_sqft, detail_land_size = size_fields(attrs) if isinstance(attrs, dict) else (None, None)
             for col, key in DETAIL_FILL_COLUMNS.items():
                 if not row.get(col):
-                    val = field_value(attrs, key)
+                    if key == "size":
+                        val = detail_size_sqft
+                    elif key == "land_size":
+                        val = detail_land_size
+                    else:
+                        val = field_value(attrs, key)
                     if key == "listed_at":
                         val = format_date_ddmmyyyy(val)
                     elif key == "description":
@@ -694,6 +742,7 @@ def scrape_category(session, label, base_url, max_pages, owner_only, debug_dump,
                 # listings - never worth scraping at all, not just filtered
                 # out downstream.
                 continue
+            size_sqft, land_size = size_fields(a)
             results.append({
                 "Title":         build_title(a),
                 "Hero Image URL": extract_hero_image_url(item),
@@ -708,8 +757,8 @@ def scrape_category(session, label, base_url, max_pages, owner_only, debug_dump,
                 "Furnishing":    field_value(a, "furnishing", params) or extract_furnishing_from_text(_first(a, MUDAH_FIELD_CANDIDATES["description"])),
                 "Bedrooms":      field_value(a, "bedroom", params),
                 "Bathrooms":     field_value(a, "bathroom", params),
-                "Size (sqft)":   field_value(a, "size", params),
-                "Land Size":     field_value(a, "land_size", params),
+                "Size (sqft)":   size_sqft,
+                "Land Size":     land_size,
                 "Description":   clean_description(_first(a, MUDAH_FIELD_CANDIDATES["description"])),
                 "Seller Name":   a.get("name") or None,
                 "Agency":        agency,

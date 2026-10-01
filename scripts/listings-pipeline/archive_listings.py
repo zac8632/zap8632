@@ -155,31 +155,53 @@ def main():
           f"{len(archive) - active_count} expired) - {downloaded} new hero images "
           f"downloaded, {expired_now} listings newly marked expired this run.")
 
+    # Built unconditionally (not just when --gsheet-id is given) since it
+    # also feeds the "Archive" tab written into the local xlsx below -
+    # every listing ever seen, Active or Expired, clearly labelled so it
+    # reads as its own section rather than looking like a stray extra
+    # copy of "All Listings".
+    rows = []
+    for list_id, entry in sorted(archive.items(), key=lambda kv: kv[1].get("First Seen", ""), reverse=True):
+        image_url = RAW_BASE.format(owner=args.gh_owner, repo=args.gh_repo,
+                                     branch=args.gh_branch, list_id=list_id)
+        has_image = os.path.exists(os.path.join(args.images_dir, f"{list_id}.jpg"))
+        row = {
+            "Status": entry.get("Status", ""),
+            "Hero Image": f'=IMAGE("{image_url}")' if has_image else "",
+            "Hero Image URL": image_url if has_image else "",
+            "First Seen": entry.get("First Seen", ""),
+            "Last Seen": entry.get("Last Seen", ""),
+            "Expired Date": entry.get("Expired Date", ""),
+        }
+        for field in CARRY_FIELDS:
+            val = entry.get(field, "")
+            if field == "Phone" and val:
+                # USER_ENTERED (needed below for =IMAGE() to evaluate)
+                # would otherwise auto-parse this as a number and drop
+                # the leading 0 - a leading apostrophe forces text.
+                val = f"'{val}"
+            row[field] = val
+        rows.append(row)
+    archive_df = pd.DataFrame(rows)
+
+    if os.path.exists(args.scrape_output):
+        # Excel has no live =IMAGE() equivalent that works across every
+        # version/tool a user might open this in - the xlsx tab gets the
+        # plain "Hero Image URL" column instead (also public/fetchable,
+        # same raw.githubusercontent.com link), and drops the
+        # Sheets-only "Hero Image" formula column + the leading-apostrophe
+        # phone guard (xlsx doesn't need the USER_ENTERED protection the
+        # Sheets sync does).
+        xlsx_df = archive_df.drop(columns=["Hero Image"]).copy()
+        xlsx_df["Phone"] = xlsx_df["Phone"].astype(str).str.lstrip("'")
+        with pd.ExcelWriter(args.scrape_output, engine="openpyxl", mode="a",
+                             if_sheet_exists="replace") as writer:
+            xlsx_df.to_excel(writer, index=False, sheet_name="Archive (incl. Expired)")
+        print(f"Added 'Archive (incl. Expired)' tab ({len(xlsx_df)} rows) to {args.scrape_output}")
+
     if args.gsheet_id and args.gsheet_key:
-        rows = []
-        for list_id, entry in sorted(archive.items(), key=lambda kv: kv[1].get("First Seen", ""), reverse=True):
-            image_url = RAW_BASE.format(owner=args.gh_owner, repo=args.gh_repo,
-                                         branch=args.gh_branch, list_id=list_id)
-            has_image = os.path.exists(os.path.join(args.images_dir, f"{list_id}.jpg"))
-            row = {
-                "Status": entry.get("Status", ""),
-                "Hero Image": f'=IMAGE("{image_url}")' if has_image else "",
-                "First Seen": entry.get("First Seen", ""),
-                "Last Seen": entry.get("Last Seen", ""),
-                "Expired Date": entry.get("Expired Date", ""),
-            }
-            for field in CARRY_FIELDS:
-                val = entry.get(field, "")
-                if field == "Phone" and val:
-                    # USER_ENTERED (needed below for =IMAGE() to evaluate)
-                    # would otherwise auto-parse this as a number and drop
-                    # the leading 0 - a leading apostrophe forces text.
-                    val = f"'{val}"
-                row[field] = val
-            rows.append(row)
-        archive_df = pd.DataFrame(rows)
-        sync_to_gsheet(archive_df, args.gsheet_id, args.gsheet_key, "Archive",
-                        value_input_option="USER_ENTERED")
+        sync_to_gsheet(archive_df.drop(columns=["Hero Image URL"]), args.gsheet_id, args.gsheet_key,
+                        "Archive", value_input_option="USER_ENTERED")
 
 
 if __name__ == "__main__":
