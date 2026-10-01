@@ -2954,6 +2954,70 @@
       {
         "date": "2026-09-30",
         "price": 3000.0
+      },
+      {
+        "date": "2026-10-01",
+        "price": 3100.0
+      }
+    ]
+  },
+  "115924785": {
+    "ref": "PPM-1250",
+    "mudah_url": "https://www.mudah.my/puncak-erskine-apartment-with-seaview-115924785.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-10-01",
+    "price_log": [
+      {
+        "date": "2026-10-01",
+        "price": 900.0
+      }
+    ]
+  },
+  "115924709": {
+    "ref": "PPM-1251",
+    "mudah_url": "https://www.mudah.my/house-for-rent-115924709.htm",
+    "title": "Palm Court (Pangsapuri Nipah), Tanjong Tokong",
+    "first_seen": "2026-10-01",
+    "price_log": [
+      {
+        "date": "2026-10-01",
+        "price": 1600.0
+      }
+    ]
+  },
+  "115924524": {
+    "ref": "PPM-1252",
+    "mudah_url": "https://www.mudah.my/apartment-selasih-court-tanjung-tokong-direct-owner-near-lotus-s-115924524.htm",
+    "title": "Apartment Selasih Court @ Tanjung Tokong [Direct Owner / Near Lotus's]\n\n, Tanjong Tokong",
+    "first_seen": "2026-10-01",
+    "price_log": [
+      {
+        "date": "2026-10-01",
+        "price": 1280.0
+      }
+    ]
+  },
+  "115924430": {
+    "ref": "PPM-1253",
+    "mudah_url": "https://www.mudah.my/house-for-rent-115924430.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-10-01",
+    "price_log": [
+      {
+        "date": "2026-10-01",
+        "price": 550.0
+      }
+    ]
+  },
+  "115918045": {
+    "ref": "PPM-1254",
+    "mudah_url": "https://www.mudah.my/single-storey-semi-d-renovated-fully-furnished-home-tanjong-tokong-115918045.htm",
+    "title": "Single Storey Semi-D Renovated, Fully Furnished Home @ Tanjong Tokong, Tanjong Tokong",
+    "first_seen": "2026-10-01",
+    "price_log": [
+      {
+        "date": "2026-10-01",
+        "price": 3600.0
       }
     ]
   }
