@@ -117,6 +117,11 @@ jobs:
             echo "===== $f: self.__next_f.push(...) calls (RSC flight data, app-router equivalent of __NEXT_DATA__) ====="
             python3 dump_next_f_pushes.py "$f"
           fi
+          j=debug_sale-residential_first_ad.json
+          if [ -e "$j" ]; then
+            echo "===== $j: structure (tenure/furnishing/land-size investigation) ====="
+            python3 inspect_first_ad.py "$j"
+          fi
 
       - name: Update listing archive (incl. expired-listing tracking + hero images)
         working-directory: scripts/listings-pipeline
