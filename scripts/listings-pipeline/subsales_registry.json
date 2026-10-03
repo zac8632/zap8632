@@ -3032,5 +3032,17 @@
         "price": 2600.0
       }
     ]
+  },
+  "115937878": {
+    "ref": "PPM-1256",
+    "mudah_url": "https://www.mudah.my/granito-tanjung-bunga-penang-115937878.htm",
+    "title": "Granito @ Permai, Tanjung Bungah",
+    "first_seen": "2026-10-03",
+    "price_log": [
+      {
+        "date": "2026-10-03",
+        "price": 850.0
+      }
+    ]
   }
 }
