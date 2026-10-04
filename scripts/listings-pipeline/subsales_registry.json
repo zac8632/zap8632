@@ -2994,6 +2994,10 @@
       {
         "date": "2026-10-01",
         "price": 1280.0
+      },
+      {
+        "date": "2026-10-04",
+        "price": 1190.0
       }
     ]
   },
@@ -3041,6 +3045,18 @@
     "price_log": [
       {
         "date": "2026-10-03",
+        "price": 850.0
+      }
+    ]
+  },
+  "115946897": {
+    "ref": "PPM-1257",
+    "mudah_url": "https://www.mudah.my/rumah-sewa-flat-115946897.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-10-04",
+    "price_log": [
+      {
+        "date": "2026-10-04",
         "price": 850.0
       }
     ]
