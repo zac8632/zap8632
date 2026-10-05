@@ -3060,5 +3060,29 @@
         "price": 850.0
       }
     ]
+  },
+  "115952986": {
+    "ref": "PPM-1258",
+    "mudah_url": "https://www.mudah.my/rooms-for-rent-115952986.htm",
+    "title": "Desa Tanjong (Tanjung Tokong), Tanjong Tokong",
+    "first_seen": "2026-10-05",
+    "price_log": [
+      {
+        "date": "2026-10-05",
+        "price": 500.0
+      }
+    ]
+  },
+  "115952848": {
+    "ref": "PPM-1259",
+    "mudah_url": "https://www.mudah.my/seaview-corner-unit-taman-kristal-apartment-fully-furnished-115952848.htm",
+    "title": "Taman Kristal, Tanjong Tokong",
+    "first_seen": "2026-10-05",
+    "price_log": [
+      {
+        "date": "2026-10-05",
+        "price": 1400.0
+      }
+    ]
   }
 }
