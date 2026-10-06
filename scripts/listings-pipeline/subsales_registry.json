@@ -3084,5 +3084,29 @@
         "price": 1400.0
       }
     ]
+  },
+  "115962312": {
+    "ref": "PPM-1260",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-for-rent-115962312.htm",
+    "title": "Tri Pinnacle for rent , Tanjong Tokong",
+    "first_seen": "2026-10-06",
+    "price_log": [
+      {
+        "date": "2026-10-06",
+        "price": 1650.0
+      }
+    ]
+  },
+  "115960588": {
+    "ref": "PPM-1261",
+    "mudah_url": "https://www.mudah.my/marinox-sky-villas-facing-seaview-1450-sf-block-b-tanjung-tokong-115960588.htm",
+    "title": "Marinox Sky Villas, Tanjong Tokong",
+    "first_seen": "2026-10-06",
+    "price_log": [
+      {
+        "date": "2026-10-06",
+        "price": 3800.0
+      }
+    ]
   }
 }
