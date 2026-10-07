@@ -3108,5 +3108,29 @@
         "price": 3800.0
       }
     ]
+  },
+  "115978292": {
+    "ref": "PPM-1262",
+    "mudah_url": "https://www.mudah.my/full-unit-for-rent-115978292.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-10-07",
+    "price_log": [
+      {
+        "date": "2026-10-07",
+        "price": 2200.0
+      }
+    ]
+  },
+  "115973265": {
+    "ref": "PPM-1263",
+    "mudah_url": "https://www.mudah.my/i-santorini-condominium-tg-tokong-for-rent-direct-owner-115973265.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-10-07",
+    "price_log": [
+      {
+        "date": "2026-10-07",
+        "price": 1700.0
+      }
+    ]
   }
 }
