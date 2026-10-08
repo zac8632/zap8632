@@ -3132,5 +3132,41 @@
         "price": 1700.0
       }
     ]
+  },
+  "115989243": {
+    "ref": "PPM-1264",
+    "mudah_url": "https://www.mudah.my/georgetown-room-with-private-bathroom-gleneagles-hospital-gurney-115989243.htm",
+    "title": "Georgetown Room with private bathroom Gleneagles hospital gurney , Georgetown",
+    "first_seen": "2026-10-08",
+    "price_log": [
+      {
+        "date": "2026-10-08",
+        "price": 900.0
+      }
+    ]
+  },
+  "115985155": {
+    "ref": "PPM-1265",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-115985155.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-10-08",
+    "price_log": [
+      {
+        "date": "2026-10-08",
+        "price": 2600.0
+      }
+    ]
+  },
+  "115984922": {
+    "ref": "PPM-1266",
+    "mudah_url": "https://www.mudah.my/gurney-park-for-rent-115984922.htm",
+    "title": "Gurney Park, Georgetown",
+    "first_seen": "2026-10-08",
+    "price_log": [
+      {
+        "date": "2026-10-08",
+        "price": 2550.0
+      }
+    ]
   }
 }
