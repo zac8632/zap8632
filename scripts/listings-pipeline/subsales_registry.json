@@ -3168,5 +3168,29 @@
         "price": 2550.0
       }
     ]
+  },
+  "115995456": {
+    "ref": "PPM-1267",
+    "mudah_url": "https://www.mudah.my/shamrock-beach-house-tanjung-bungah-tokong-straits-quay-penang-gurney-115995456.htm",
+    "title": "Shamrock Beach House Tanjung Bungah Tokong Straits Quay Penang Gurney, Tanjung Bungah",
+    "first_seen": "2026-10-09",
+    "price_log": [
+      {
+        "date": "2026-10-09",
+        "price": 3700.0
+      }
+    ]
+  },
+  "115991852": {
+    "ref": "PPM-1268",
+    "mudah_url": "https://www.mudah.my/pulau-penang-115991852.htm",
+    "title": "Palm Court (Pangsapuri Nipah), Tanjong Tokong",
+    "first_seen": "2026-10-09",
+    "price_log": [
+      {
+        "date": "2026-10-09",
+        "price": 850.0
+      }
+    ]
   }
 }
