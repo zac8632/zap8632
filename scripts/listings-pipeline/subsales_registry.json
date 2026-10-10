@@ -3192,5 +3192,17 @@
         "price": 850.0
       }
     ]
+  },
+  "116001654": {
+    "ref": "PPM-1269",
+    "mudah_url": "https://www.mudah.my/cosy-i-santorini-unit-to-let-fully-furnished-116001654.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-10-10",
+    "price_log": [
+      {
+        "date": "2026-10-10",
+        "price": 2900.0
+      }
+    ]
   }
 }
