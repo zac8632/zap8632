@@ -1770,6 +1770,10 @@
       {
         "date": "2026-07-28",
         "price": 1500.0
+      },
+      {
+        "date": "2026-10-13",
+        "price": 1600.0
       }
     ]
   },
@@ -3206,6 +3210,30 @@
       {
         "date": "2026-10-10",
         "price": 2900.0
+      }
+    ]
+  },
+  "116032509": {
+    "ref": "PPM-1270",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-tanjung-tokong-3r2b-800sf-high-floor-forest-view-2-car-parks-116032509.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-10-13",
+    "price_log": [
+      {
+        "date": "2026-10-13",
+        "price": 1800.0
+      }
+    ]
+  },
+  "116030509": {
+    "ref": "PPM-1271",
+    "mudah_url": "https://www.mudah.my/the-peak-resident-116030509.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-10-13",
+    "price_log": [
+      {
+        "date": "2026-10-13",
+        "price": 2600.0
       }
     ]
   }
