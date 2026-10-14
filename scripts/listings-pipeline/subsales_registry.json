@@ -3236,5 +3236,17 @@
         "price": 2600.0
       }
     ]
+  },
+  "116037380": {
+    "ref": "PPM-1272",
+    "mudah_url": "https://www.mudah.my/condo-for-rent-surin-tanjung-bungah-fully-furnished-116037380.htm",
+    "title": "Surin, Tanjung Bungah",
+    "first_seen": "2026-10-14",
+    "price_log": [
+      {
+        "date": "2026-10-14",
+        "price": 2500.0
+      }
+    ]
   }
 }
