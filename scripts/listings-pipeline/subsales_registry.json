@@ -3248,5 +3248,53 @@
         "price": 2500.0
       }
     ]
+  },
+  "116041173": {
+    "ref": "PPM-1273",
+    "mudah_url": "https://www.mudah.my/double-storey-terrace-116041173.htm",
+    "title": "Double Storey Terrace, Tanjung Bungah",
+    "first_seen": "2026-10-15",
+    "price_log": [
+      {
+        "date": "2026-10-15",
+        "price": 1250000.0
+      }
+    ]
+  },
+  "116049659": {
+    "ref": "PPM-1274",
+    "mudah_url": "https://www.mudah.my/to-rent-116049659.htm",
+    "title": "Granito @ Permai, Tanjung Bungah",
+    "first_seen": "2026-10-15",
+    "price_log": [
+      {
+        "date": "2026-10-15",
+        "price": 2200.0
+      }
+    ]
+  },
+  "116049579": {
+    "ref": "PPM-1275",
+    "mudah_url": "https://www.mudah.my/rumah-sewa-tanjung-tokong-116049579.htm",
+    "title": "Uda Flat, Tanjong Tokong",
+    "first_seen": "2026-10-15",
+    "price_log": [
+      {
+        "date": "2026-10-15",
+        "price": 950.0
+      }
+    ]
+  },
+  "116045056": {
+    "ref": "PPM-1276",
+    "mudah_url": "https://www.mudah.my/taman-kristal-3-room-apartment-for-rent-116045056.htm",
+    "title": "Taman Kristal, Tanjong Tokong",
+    "first_seen": "2026-10-15",
+    "price_log": [
+      {
+        "date": "2026-10-15",
+        "price": 1200.0
+      }
+    ]
   }
 }
