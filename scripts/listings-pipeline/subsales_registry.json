@@ -3296,5 +3296,17 @@
         "price": 1200.0
       }
     ]
+  },
+  "116055395": {
+    "ref": "PPM-1277",
+    "mudah_url": "https://www.mudah.my/sewa-rumah-116055395.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-10-16",
+    "price_log": [
+      {
+        "date": "2026-10-16",
+        "price": 850.0
+      }
+    ]
   }
 }
