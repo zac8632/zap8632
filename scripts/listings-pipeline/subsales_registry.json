@@ -3308,5 +3308,29 @@
         "price": 850.0
       }
     ]
+  },
+  "116060596": {
+    "ref": "PPM-1278",
+    "mudah_url": "https://www.mudah.my/penang-tanjung-tokong-4br-beautiful-sea-view-116060596.htm",
+    "title": "City Residence, Tanjong Tokong",
+    "first_seen": "2026-10-17",
+    "price_log": [
+      {
+        "date": "2026-10-17",
+        "price": 5200.0
+      }
+    ]
+  },
+  "116060040": {
+    "ref": "PPM-1279",
+    "mudah_url": "https://www.mudah.my/tri-pinnacle-tanjung-tokong-3r2b-whole-unit-for-rent-116060040.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-10-17",
+    "price_log": [
+      {
+        "date": "2026-10-17",
+        "price": 1300.0
+      }
+    ]
   }
 }
