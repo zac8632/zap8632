@@ -3332,5 +3332,29 @@
         "price": 1300.0
       }
     ]
+  },
+  "116068941": {
+    "ref": "PPM-1280",
+    "mudah_url": "https://www.mudah.my/house-for-rent-116068941.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-10-18",
+    "price_log": [
+      {
+        "date": "2026-10-18",
+        "price": 1500.0
+      }
+    ]
+  },
+  "116068695": {
+    "ref": "PPM-1281",
+    "mudah_url": "https://www.mudah.my/prime-location-nice-condo-gurney-park-for-rent-116068695.htm",
+    "title": "Gurney Park, Georgetown",
+    "first_seen": "2026-10-18",
+    "price_log": [
+      {
+        "date": "2026-10-18",
+        "price": 2400.0
+      }
+    ]
   }
 }
