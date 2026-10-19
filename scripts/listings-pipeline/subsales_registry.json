@@ -3356,5 +3356,65 @@
         "price": 2400.0
       }
     ]
+  },
+  "116081252": {
+    "ref": "PPM-1282",
+    "mudah_url": "https://www.mudah.my/i-santorini-condominium-3-bedroom-fully-furnished-for-rent-116081252.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-10-19",
+    "price_log": [
+      {
+        "date": "2026-10-19",
+        "price": 2200.0
+      }
+    ]
+  },
+  "116076904": {
+    "ref": "PPM-1283",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-116076904.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-10-19",
+    "price_log": [
+      {
+        "date": "2026-10-19",
+        "price": 2600.0
+      }
+    ]
+  },
+  "116075313": {
+    "ref": "PPM-1284",
+    "mudah_url": "https://www.mudah.my/palm-court-at-tanjung-tokong-direct-owner-116075313.htm",
+    "title": "Palm Court (Pangsapuri Nipah), Tanjong Tokong",
+    "first_seen": "2026-10-19",
+    "price_log": [
+      {
+        "date": "2026-10-19",
+        "price": 1200.0
+      }
+    ]
+  },
+  "116075299": {
+    "ref": "PPM-1285",
+    "mudah_url": "https://www.mudah.my/the-peak-residences-tg-tokong-116075299.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-10-19",
+    "price_log": [
+      {
+        "date": "2026-10-19",
+        "price": 1800.0
+      }
+    ]
+  },
+  "116075292": {
+    "ref": "PPM-1286",
+    "mudah_url": "https://www.mudah.my/taman-erskine-tg-tokong-corner-house-116075292.htm",
+    "title": "Taman Bukit Erskine, Tanjong Tokong",
+    "first_seen": "2026-10-19",
+    "price_log": [
+      {
+        "date": "2026-10-19",
+        "price": 1400.0
+      }
+    ]
   }
 }
