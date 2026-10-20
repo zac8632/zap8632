@@ -922,6 +922,10 @@
       {
         "date": "2026-07-12",
         "price": 1850000.0
+      },
+      {
+        "date": "2026-10-20",
+        "price": 1830000.0
       }
     ]
   },
@@ -2978,6 +2982,10 @@
       {
         "date": "2026-10-01",
         "price": 900.0
+      },
+      {
+        "date": "2026-10-20",
+        "price": 850.0
       }
     ]
   },
@@ -3414,6 +3422,18 @@
       {
         "date": "2026-10-19",
         "price": 1400.0
+      }
+    ]
+  },
+  "116091219": {
+    "ref": "PPM-1287",
+    "mudah_url": "https://www.mudah.my/middle-bedroom-for-rent-the-latitude-tg-tokong-116091219.htm",
+    "title": "The Latitude, Tanjong Tokong",
+    "first_seen": "2026-10-20",
+    "price_log": [
+      {
+        "date": "2026-10-20",
+        "price": 675.0
       }
     ]
   }
