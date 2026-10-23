@@ -3436,5 +3436,29 @@
         "price": 675.0
       }
     ]
+  },
+  "116113482": {
+    "ref": "PPM-1288",
+    "mudah_url": "https://www.mudah.my/duplex-unit-marina-bay-tanjong-tokong-near-gurney-drive-116113482.htm",
+    "title": "Marina Bay Condominium, Tanjong Tokong",
+    "first_seen": "2026-10-23",
+    "price_log": [
+      {
+        "date": "2026-10-23",
+        "price": 1750000.0
+      }
+    ]
+  },
+  "116118889": {
+    "ref": "PPM-1289",
+    "mudah_url": "https://www.mudah.my/for-rent-fully-furnished-unit-at-tri-pinnacle-tanjung-tokong-penang-116118889.htm",
+    "title": "Tri Pinnacle, Tanjong Tokong",
+    "first_seen": "2026-10-23",
+    "price_log": [
+      {
+        "date": "2026-10-23",
+        "price": 2200.0
+      }
+    ]
   }
 }
