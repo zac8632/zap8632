@@ -3464,5 +3464,17 @@
         "price": 2200.0
       }
     ]
+  },
+  "116127904": {
+    "ref": "PPM-1290",
+    "mudah_url": "https://www.mudah.my/puncak-erskine-with-fixed-carpark-for-rent-116127904.htm",
+    "title": "Puncak Erskine, Tanjong Tokong",
+    "first_seen": "2026-10-25",
+    "price_log": [
+      {
+        "date": "2026-10-25",
+        "price": 800.0
+      }
+    ]
   }
 }
