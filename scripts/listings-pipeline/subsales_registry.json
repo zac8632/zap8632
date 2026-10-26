@@ -3476,5 +3476,77 @@
         "price": 800.0
       }
     ]
+  },
+  "116139841": {
+    "ref": "PPM-1291",
+    "mudah_url": "https://www.mudah.my/the-peak-residence-116139841.htm",
+    "title": "The Peak Residences, Tanjong Tokong",
+    "first_seen": "2026-10-26",
+    "price_log": [
+      {
+        "date": "2026-10-26",
+        "price": 2600.0
+      }
+    ]
+  },
+  "116134263": {
+    "ref": "PPM-1292",
+    "mudah_url": "https://www.mudah.my/permai-jaya-h-block-for-rent-116134263.htm",
+    "title": "Permai Jaya Apartment, Tanjung Bungah",
+    "first_seen": "2026-10-26",
+    "price_log": [
+      {
+        "date": "2026-10-26",
+        "price": 850.0
+      }
+    ]
+  },
+  "116134194": {
+    "ref": "PPM-1293",
+    "mudah_url": "https://www.mudah.my/marina-bay-condominium-116134194.htm",
+    "title": "Marina Bay Condominium, Tanjong Tokong",
+    "first_seen": "2026-10-26",
+    "price_log": [
+      {
+        "date": "2026-10-26",
+        "price": 1800.0
+      }
+    ]
+  },
+  "116134174": {
+    "ref": "PPM-1294",
+    "mudah_url": "https://www.mudah.my/owner-116134174.htm",
+    "title": "Marina Bay Condominium, Tanjong Tokong",
+    "first_seen": "2026-10-26",
+    "price_log": [
+      {
+        "date": "2026-10-26",
+        "price": 1800.0
+      }
+    ]
+  },
+  "116133550": {
+    "ref": "PPM-1295",
+    "mudah_url": "https://www.mudah.my/taman-batu-bukit-rental-116133550.htm",
+    "title": "Taman Batu Bukit, Tanjong Tokong",
+    "first_seen": "2026-10-26",
+    "price_log": [
+      {
+        "date": "2026-10-26",
+        "price": 900.0
+      }
+    ]
+  },
+  "116133424": {
+    "ref": "PPM-1296",
+    "mudah_url": "https://www.mudah.my/tanjong-tokong-terrace-house-116133424.htm",
+    "title": "Tanjong Tokong terrace house , Tanjong Tokong",
+    "first_seen": "2026-10-26",
+    "price_log": [
+      {
+        "date": "2026-10-26",
+        "price": 3600.0
+      }
+    ]
   }
 }
