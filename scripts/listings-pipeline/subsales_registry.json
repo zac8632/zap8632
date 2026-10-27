@@ -2362,6 +2362,10 @@
       {
         "date": "2026-08-23",
         "price": 1800000.0
+      },
+      {
+        "date": "2026-10-27",
+        "price": 1600000.0
       }
     ]
   },
@@ -3546,6 +3550,30 @@
       {
         "date": "2026-10-26",
         "price": 3600.0
+      }
+    ]
+  },
+  "116149201": {
+    "ref": "PPM-1297",
+    "mudah_url": "https://www.mudah.my/high-floor-and-seaview-unit-for-rent-116149201.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-10-27",
+    "price_log": [
+      {
+        "date": "2026-10-27",
+        "price": 2500.0
+      }
+    ]
+  },
+  "116148872": {
+    "ref": "PPM-1298",
+    "mudah_url": "https://www.mudah.my/3-bedroom-for-rent-at-i-santorini-tower-a-116148872.htm",
+    "title": "I-Santorini, Tanjong Tokong",
+    "first_seen": "2026-10-27",
+    "price_log": [
+      {
+        "date": "2026-10-27",
+        "price": 2200.0
       }
     ]
   }
