@@ -3576,5 +3576,17 @@
         "price": 2200.0
       }
     ]
+  },
+  "116158503": {
+    "ref": "PPM-1299",
+    "mudah_url": "https://www.mudah.my/high-floor-3-bedrooms-fully-furnished-4-airconds-116158503.htm",
+    "title": "Taman Kristal, Tanjong Tokong",
+    "first_seen": "2026-10-28",
+    "price_log": [
+      {
+        "date": "2026-10-28",
+        "price": 1600.0
+      }
+    ]
   }
 }
